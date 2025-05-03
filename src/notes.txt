@@ -1,0 +1,2 @@
+yourMotor.get_actual_velocity(); - RETURNS DEGREES
+use 1.17f for scaling motor odometry
