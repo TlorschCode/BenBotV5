@@ -5,22 +5,53 @@
 #include <thread>
 
 pros::Controller controller(pros::E_CONTROLLER_MASTER);
-pros::Motor topLeft(2, pros::v5::MotorGearset::blue);
-pros::Motor bottomLeft(4, pros::v5::MotorGearset::blue);
-pros::Motor topRight(1, pros::v5::MotorGearset::blue);
-pros::Motor bottomRight(3,pros::v5::MotorGearset::blue);
+pros::Motor topLeft(1, pros::v5::MotorGearset::blue);
+pros::Motor bottomLeft(2, pros::v5::MotorGearset::blue);
+pros::Motor topRight(3, pros::v5::MotorGearset::blue);
+pros::Motor bottomRight(4, pros::v5::MotorGearset::blue);
+pros::Motor conveyor(5, pros::v5::MotorGearset::green);
+pros::Motor bandRotator(6, pros::v5::MotorGearset::green);
+
 pros::Imu inertial(5);
+void configureMotors() {
+	topLeft.set_reversed(true);
+	bottomLeft.set_reversed(true);
+	topLeft.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	topRight.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	bottomLeft.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	bottomRight.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+}
 
 const long double PI = 3.14159265358979323846;
 
 float posX = {0};
 float posY = {0};
-float gear_ratio = {0.5f};
-float wheel_circumference = {12.56f};
-float time_amount = {60.0f / 0.01f};
-float prev_all = {0};
+const float gear_ratio = {0.5f}; // Wheel-motor gear ratio
+const float wheel_circumference = {12.56f};
+const float frame = {100.0f / 1000.0f}; // Frame time
+float all_rot_prev = {0};
 
 //| NON-DEFAULT FUNCTIONS |//
+inline double toRadians(float degrees) {
+	return degrees * (PI / 180);
+}
+
+inline double toDegrees(double radians) {
+	return radians * (180 / PI);
+}
+
+inline double truncate(double num, int cutoff = 2) {
+	return floor(num * pow(10, cutoff)) / pow(10, cutoff);
+}
+
+inline int sign(float input) {
+	return (input >= 0) ? 1 : -1;
+}
+
+inline double map_value(float input, float input_start, float input_end, float output_start, double output_end) {
+    return output_start + (output_end - output_start) * ((input - input_start) / (input_end - input_start));
+}
+
 void wait(float time) {
 	pros::delay(time);
 }
@@ -32,18 +63,6 @@ void clear_screen() {
 	pros::lcd::clear_line(4);
 	pros::lcd::clear_line(5);
 	pros::lcd::clear_line(6);
-}
-
-double to_radians(float degrees) {
-	return degrees * (PI / 180);
-}
-
-float to_degrees(double radians) {
-	return radians * (180 / PI);
-}
-
-double truncate(double num, int cutoff = 2) {
-	return floor(num * pow(10, cutoff)) / pow(10, cutoff);
 }
 
 template <typename T>
@@ -61,62 +80,45 @@ void println(const T& input, int row = 1) {
     pros::lcd::set_text(row, printtext);
 }
 
-void move_motors(float speedleft, float speedright) {
+void moveWheels(float speedleft, float speedright) {
 	topLeft.move_velocity(speedleft);
 	bottomLeft.move_velocity(speedleft);
 	topRight.move_velocity(speedright);
 	bottomRight.move_velocity(speedright);
 }
 
-void brake_wheels() {
+void brakeWheels() {
 	topLeft.brake();
 	bottomLeft.brake();
 	topRight.brake();
 	bottomRight.brake();
 }
 
-int sign(float input) {
-	if (input >= 0) {
-		return 1;
-	} else {
-		return -1;
-	}
-}
-
-double map_value(float input, float input_start, float input_end, float output_start, double output_end) {
-    return output_start + (output_end - output_start) * ((input - input_start) / (input_end - input_start));
-}
-
-void check_pause_program() { /// REMOVE THIS FUNCTION
+void checkPauseProgram() { /// REMOVE THIS FUNCTION FOR FINAL COMPETITION
 	if (controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X)) {
-		brake_wheels();
+		brakeWheels();
 		while (!controller.get_digital_new_press(pros::E_CONTROLLER_DIGITAL_X)) {
 			wait(10);
 		}
 	}
 }
 
-void track_position() {
+void trackPosition() {
 	std::uint32_t now = pros::millis();
 	float heading = truncate(inertial.get_heading());
 	float left_pos = (topLeft.get_raw_position(&now) + bottomLeft.get_raw_position(&now)) / 2;
 	float right_pos = (topRight.get_raw_position(&now) + bottomRight.get_raw_position(&now)) / 2;
-	float all_now = (left_pos + right_pos) / 2;
-	float delta_all = all_now - prev_all;
-	posX += ((delta_all / 360) * gear_ratio * wheel_circumference) * sin(to_radians(heading));
-	posY += ((delta_all / 360) * gear_ratio * wheel_circumference) * cos(to_radians(heading));
-	prev_all = all_now;
+	float all_rot_now = (left_pos + right_pos) / 2;
+	float all_rot_delta = all_rot_now - all_rot_prev;
+	posX += ((all_rot_delta / 360) * gear_ratio * wheel_circumference) * sin(toRadians(heading));
+	posY += ((all_rot_delta / 360) * gear_ratio * wheel_circumference) * cos(toRadians(heading));
+	all_rot_prev = all_rot_now;
 }
 
 //| DEFAULT FUNCTIONS |//
 void initialize() {
+	configureMotors();
 	pros::lcd::initialize();
-	topLeft.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	topRight.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	bottomLeft.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	bottomRight.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	topLeft.set_reversed(true);
-	bottomLeft.set_reversed(true);
 	inertial.reset();
 	wait(2300);
 }
@@ -154,19 +156,48 @@ void autonomous() {
 
 }
 
+void drivePipeline() {
+	float left = (controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) * 2) + (controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X) * 1.5f);
+	float right = (controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) * 2) - (controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X) * 1.5f);
+	moveWheels(left, right);
+	trackPosition();
+	println(posX);
+	println(posY, 2);
+}
+
+void scorePipeline() {
+	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
+		conveyor.move_velocity(200);
+		bandRotator.set_reversed(false);
+		bandRotator.move_velocity(200);
+	} else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B)) {
+		conveyor.move_velocity(200);
+		bandRotator.set_reversed(true);
+		bandRotator.move_velocity(200);
+	} else {
+		conveyor.brake();
+		bandRotator.brake();
+	}
+}
+
 void opcontrol() {
 	// 72 inches across the field
 	clear_screen();
 	wait(1000);
-	while (posY < (144 - (16.5f * 2))) {
-		float left = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) + (controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X) / 2);
-		float right = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) - (controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X) / 2);
-		move_motors(left, right);
-		track_position();
-		println(posX);
-		println(posY, 2);
-		wait(10);
+	// while (posY < (144 - (16.5f * 2))) {
+	// 	float left = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) + (controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X) / 2);
+	// 	float right = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) - (controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X) / 2);
+	// 	moveWheels(left, right);
+	// 	trackPosition();
+	// 	println(posX);
+	// 	println(posY, 2);
+	// 	wait(10);
+	// }
+	while (true) {
+		drivePipeline();
+		scorePipeline();
+		wait(frame);
 	}
 	controller.rumble("-");
-	brake_wheels();
+	brakeWheels();
 }
