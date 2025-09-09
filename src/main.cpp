@@ -10,12 +10,14 @@ pros::Motor bottomLeft(2, pros::v5::MotorGearset::blue);
 pros::Motor topRight(3, pros::v5::MotorGearset::blue);
 pros::Motor bottomRight(4, pros::v5::MotorGearset::blue);
 pros::Motor conveyor(5, pros::v5::MotorGearset::green);
-pros::Motor bandRotator(6, pros::v5::MotorGearset::green);
+pros::Motor bandRotatorTop(6, pros::v5::MotorGearset::green);
+pros::Motor bandRotatorBottom(7, pros::v5::MotorGearset::green);
 
 pros::Imu inertial(5);
 void configureMotors() {
 	topLeft.set_reversed(true);
 	bottomLeft.set_reversed(true);
+	conveyor.set_reversed(true);
 	topLeft.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
 	topRight.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
 	bottomLeft.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
@@ -156,9 +158,15 @@ void autonomous() {
 
 }
 
-void drivePipeline() {
-	float left = (controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) * 2) + (controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X) * 1.5f);
-	float right = (controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) * 2) - (controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X) * 1.5f);
+void drivePipeline(float *driveSpeed) {
+	// Controller analog is -127 to 127
+	float analog_left_x = (pros::E_CONTROLLER_ANALOG_LEFT_X / 127) * 100;
+	float analog_left_y = (pros::E_CONTROLLER_ANALOG_LEFT_Y / 127) * 100;
+	float analog_right_x = (pros::E_CONTROLLER_ANALOG_RIGHT_X / 127) * 100;
+	float analog_right_y = (pros::E_CONTROLLER_ANALOG_RIGHT_Y / 127) * 100;
+	*driveSpeed += analog_right_y / 10;
+	float left = (analog_left_y * (*driveSpeed / 100)) + (analog_left_x * (*driveSpeed / 1.5));
+	float right = (analog_left_y * (*driveSpeed / 100)) - (analog_left_x * (*driveSpeed / 1.5));
 	moveWheels(left, right);
 	trackPosition();
 	println(posX);
@@ -168,33 +176,29 @@ void drivePipeline() {
 void scorePipeline() {
 	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_A)) {
 		conveyor.move_velocity(200);
-		bandRotator.set_reversed(false);
-		bandRotator.move_velocity(200);
+		bandRotatorTop.set_reversed(false);
+		bandRotatorTop.move_velocity(200);
+		bandRotatorBottom.move_velocity(200);
 	} else if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_B)) {
 		conveyor.move_velocity(200);
-		bandRotator.set_reversed(true);
-		bandRotator.move_velocity(200);
+		bandRotatorTop.set_reversed(true);
+		bandRotatorTop.move_velocity(200);
 	} else {
 		conveyor.brake();
-		bandRotator.brake();
+		bandRotatorTop.brake();
+	}
+	if (controller.get_digital(pros::E_CONTROLLER_DIGITAL_R2)) {
+		
 	}
 }
 
 void opcontrol() {
 	// 72 inches across the field
+	float drive_speed = 100.0f;
 	clear_screen();
 	wait(1000);
-	// while (posY < (144 - (16.5f * 2))) {
-	// 	float left = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) + (controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X) / 2);
-	// 	float right = controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_Y) - (controller.get_analog(pros::E_CONTROLLER_ANALOG_LEFT_X) / 2);
-	// 	moveWheels(left, right);
-	// 	trackPosition();
-	// 	println(posX);
-	// 	println(posY, 2);
-	// 	wait(10);
-	// }
 	while (true) {
-		drivePipeline();
+		drivePipeline(&drive_speed);
 		scorePipeline();
 		wait(frame);
 	}
