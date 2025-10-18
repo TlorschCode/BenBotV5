@@ -12,10 +12,10 @@ using namespace std;
 
 
 // MARK: Definitions
-#define ControllerAnalogRightX pros::E_CONTROLLER_ANALOG_RIGHT_Y
+#define ControllerAnalogRightX pros::E_CONTROLLER_ANALOG_RIGHT_X
 #define ControllerAnalogRightY pros::E_CONTROLLER_ANALOG_RIGHT_Y
-#define ControllerAnalogLeftX pros::E_CONTROLLER_ANALOG_RIGHT_Y
-#define ControllerAnalogLeftY pros::E_CONTROLLER_ANALOG_RIGHT_Y
+#define ControllerAnalogLeftX pros::E_CONTROLLER_ANALOG_LEFT_X
+#define ControllerAnalogLeftY pros::E_CONTROLLER_ANALOG_LEFT_Y
 
 #define ControllerDigitalA pros::E_CONTROLLER_DIGITAL_A
 #define ControllerDigitalB pros::E_CONTROLLER_DIGITAL_B
@@ -29,77 +29,33 @@ using namespace std;
 #define ControllerDigitalR2 pros::E_CONTROLLER_DIGITAL_R2
 #define ControllerDigitalL1 pros::E_CONTROLLER_DIGITAL_L1
 #define ControllerDigitalL2 pros::E_CONTROLLER_DIGITAL_L2
+#define PI 3.14159265358979323846
 
-
-
-// MARK: Hardware Init
-pros::Controller controller(pros::E_CONTROLLER_MASTER);
-pros::Motor topLeft(1, pros::v5::MotorGearset::blue);
-pros::Motor bottomLeft(2, pros::v5::MotorGearset::blue);
-pros::Motor topRight(3, pros::v5::MotorGearset::blue);
-pros::Motor bottomRight(4, pros::v5::MotorGearset::blue);
-pros::Motor conveyor(5, pros::v5::MotorGearset::green);
-pros::Motor bandRotatorTop(20, pros::v5::MotorGearset::blue);
-pros::Motor bandRotatorBottom(7, pros::v5::MotorGearset::green);
-pros::Motor intake(8, pros::v5::MotorGearset::green);
-pros::Motor agitator(9, pros::v5::MotorGearset::green);
-
-pros::adi::Pneumatics loaderRod('A', false);
-
-
-pros::Imu inertial(5);
-void configureMotors() {
-	topLeft.set_reversed(true);
-	bottomLeft.set_reversed(true);
-    conveyor.set_reversed(true);
-	intake.set_reversed(true);
-	topLeft.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	topRight.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	bottomLeft.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	bottomRight.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-}
-
-// MARK: Consts
-constexpr long double PI = 3.14159265358979323846;
 constexpr float gear_ratio = {0.5f}; // Wheel-motor gear ratio
 constexpr float wheel_circumference = {12.56f};
-constexpr float frame = {100.0f / 1000.0f}; // Frame time
-
-
-
-
-
-
-
-
-
-// MARK: Globals
-array<DrivetrainMotor, 4> drivetrain = {DrivetrainMotor(topLeft, true), DrivetrainMotor(bottomLeft, true), DrivetrainMotor(topRight, false), DrivetrainMotor(bottomRight, false)};
-Robot robot = Robot(drivetrain);
-pidController PID_Controller = pidController();
-float all_rot_prev = {0};
-float rightAnalogX = {0};
-float rightAnalogY = {0};
-float leftAnalogX = {0};
-float leftAnalogY = {0};
-float allRotPrev = {0}; // The previous rotation of all the drivetrain wheels
-
-vector<Point> autonPoints = {
-	{0, 0},
-	{0, 24},
-	{12, 12}
-};
-
-uint16_t buttons = {0};
-DrivingMode drivingMode = SINGLE_JOYSTICK;
+constexpr float frame = {20}; // Frame time
 
 // MARK: Templates
-void brakeWheels();
-void checkPauseProgram();
-void updateControllerData();
-void moveWheels(float speedLeft, float speedRight);
+struct Vector2;
+struct Point;
+class Heading;
+class DrivetrainMotor;
+class Robot;
+class PID_Controller;
 
-constexpr enum Button : uint16_t {
+
+
+
+
+
+
+
+
+
+
+
+// MARK: Enum/Struct
+enum Button : uint16_t {
 	None = 0,
 	A     = 1 << 0,
 	B     = 1 << 1,
@@ -115,7 +71,7 @@ constexpr enum Button : uint16_t {
 	L2    = 1 << 11
 };
 
-enum DrivingMode {
+enum class DrivingMode {
 	SINGLE_JOYSTICK,
 	TANK
 };
@@ -124,18 +80,19 @@ struct Vector2 {
 	float x;
 	float y;
 	Vector2(float _x, float _y) : x(_x), y(_y) {}
+	Vector2() : x(0), y(0) {}
 
     // Example: Overload the addition operator
-    Vector2 operator+(const Vector2& other) const {
+    inline Vector2 operator+(const Vector2 &other) const {
         return Vector2(x + other.x, y + other.y);
     }
-	Vector2 operator-(const Vector2& other) const {
+	inline Vector2 operator-(const Vector2 &other) const {
         return Vector2(x - other.x, y - other.y);
     }
-	Vector2 operator/(const Vector2& other) const {
+	inline Vector2 operator/(const Vector2 &other) const {
         return Vector2(x / other.x, y / other.y);
     }
-	Vector2 operator*(const Vector2& other) const {
+	inline Vector2 operator*(const Vector2 &other) const {
         return Vector2(x * other.x, y * other.y);
     }
 };
@@ -146,20 +103,92 @@ struct Point {
 		pos.x = _x;
 		pos.y = _y;
 	}
+	Point(const Vector2 &v) : pos(v) {};
 	bool visited = false;
+	inline Point& operator=(const Vector2 &other) {
+		pos = other;
+		return *this;
+	}
 };
-inline uint8_t operator|(Button &a, Button &b) {
-	return static_cast<uint8_t>(a) | static_cast<uint8_t>(b);
+
+void brakeWheels();
+void checkPauseProgram();
+void updateControllerData();
+
+// MARK: Utilities
+inline double toRadians(float degrees) {
+	return degrees * (PI / 180);
 }
-inline uint8_t operator&(Button &a, Button &b) {
-	return static_cast<uint8_t>(a) & static_cast<uint8_t>(b);
+
+inline double toDegrees(double radians) {
+	return radians * (180 / PI);
 }
-inline uint8_t operator|=(uint8_t &a, Button &b) {
-	return a = static_cast<uint8_t>(a) & static_cast<uint8_t>(b);
+
+inline double truncate(double num, int cutoff = 2) {
+	return floor(num * pow(10, cutoff)) / pow(10, cutoff);
 }
-inline uint8_t operator&=(uint8_t &a, Button &b) {
-	return a = static_cast<uint8_t>(a) & static_cast<uint8_t>(b);
+
+inline int sign(float &input) {
+	return (input >= 0) ? 1 : -1;
 }
+
+inline double map_value(double &input, double &input_start, double &input_end, double &output_start, double &output_end) {
+    return output_start + (output_end - output_start) * ((input - input_start) / (input_end - input_start));
+}
+
+inline float degreesTill(Vector2 &from, Vector2 &to) {
+	return toDegrees(atan2(to.y - from.y, to.x - from.x));
+}
+
+inline float radiansTill(Vector2 &from, Vector2 &to) {
+	return atan2(to.y - from.y, to.x - from.x);
+}
+
+// MARK: Norm Globals
+float all_rot_prev = {0};
+float rightAnalogX = {0};
+float rightAnalogY = {0};
+float leftAnalogX = {0};
+float leftAnalogY = {0};
+float allRotPrev = {0}; // The previous rotation of all the drivetrain wheels
+bool pressingPneumatics = false;
+
+
+
+
+
+
+
+
+
+
+
+
+// MARK: Hardware Init
+pros::Controller controller(pros::E_CONTROLLER_MASTER);
+pros::Motor topLeft(1, pros::v5::MotorGearset::blue);
+pros::Motor bottomLeft(2, pros::v5::MotorGearset::blue);
+pros::Motor topRight(3, pros::v5::MotorGearset::blue);
+pros::Motor bottomRight(4, pros::v5::MotorGearset::blue);
+pros::Motor conveyor(5, pros::v5::MotorGearset::green);
+pros::Motor bandRotatorTop(6, pros::v5::MotorGearset::blue);
+pros::Motor bandRotatorBottom(7, pros::v5::MotorGearset::green);
+pros::Motor intake(20, pros::v5::MotorGearset::green);
+pros::Motor agitator(9, pros::v5::MotorGearset::green);
+void configureMotors() {
+	topLeft.set_reversed(true);
+	bottomLeft.set_reversed(true);
+    conveyor.set_reversed(true);
+	intake.set_reversed(true);
+	topLeft.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	topRight.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	bottomLeft.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	bottomRight.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+}
+pros::Imu inertial(5);
+
+
+pros::adi::Pneumatics loaderRod('A', false);
 
 
 // MARK: Heading
@@ -167,10 +196,10 @@ class Heading {
 	private:
 		float degrees = 0;
 	public:
-		inline float degrees() {
+		inline float getDegrees() {
 			return degrees;
 		}
-		inline double radians() {
+		inline double getRadians() {
 			return toRadians(degrees);
 		}
 		void setDegrees(float amount) {
@@ -188,7 +217,7 @@ class DrivetrainMotor {
 	public:
 		pros::Motor motor;
 		bool isLeftSide;
-		DrivetrainMotor(pros::Motor _motor, bool _isLeftSide) : motor(_motor) {
+		DrivetrainMotor(pros::Motor &_motor, bool _isLeftSide) : motor(_motor) {
 			isLeftSide = _isLeftSide;
 			switch (_motor.get_gearing()) {
 				case pros::v5::MotorGears::red:    // high torque (36:1)
@@ -202,7 +231,7 @@ class DrivetrainMotor {
 			}
 		}
 		void setVelocityPercent(float vel) {
-			motor.move_velocity(vel * RPM);
+			motor.move_velocity((vel / 100) * RPM);
 		}
 		void brake() {
 			motor.brake();
@@ -236,8 +265,8 @@ class Robot {  // Robot class for more readable code
 			float right_pos = (topRight.get_raw_position(&now) + bottomRight.get_raw_position(&now)) / 2;
 			float all_rot_now = (left_pos + right_pos) / 2;
 			float all_rot_delta = all_rot_now - all_rot_prev;
-			robot.RobotPos.x += ((all_rot_delta / 360) * gear_ratio * wheel_circumference) * sin(heading.radians());
-			robot.RobotPos.y += ((all_rot_delta / 360) * gear_ratio * wheel_circumference) * cos(heading.radians());
+			pos.x += ((all_rot_delta / 360) * gear_ratio * wheel_circumference) * sin(heading.getRadians());
+			pos.y += ((all_rot_delta / 360) * gear_ratio * wheel_circumference) * cos(heading.getRadians());
 			all_rot_prev = all_rot_now;
 		}
 };
@@ -249,7 +278,7 @@ constexpr float dPosWeight = {4.2f};
 constexpr float pRotWeight = {1.0f};
 constexpr float iRotWeight = {0.05f};
 constexpr float dRotWeight = {0.85f};
-class pidController {
+class PID_Controller {
 	private:
 		Vector2 pPos = {0, 0};
 		Vector2 iPos = {0, 0};
@@ -260,57 +289,50 @@ class pidController {
 		float PID_rot = 0;
 		float prev_rot = 0;
 	public:
-		pidController() {};
-		void update(Vector2 _target, Robot _robot) {
+		PID_Controller() {};
+		void update(Vector2 &_target, Robot &_robot) {
 			float original_x = 0;
 			float original_y = 0;
 			float original_rot = 0;
 			bool auton_rot = true; // flag if heading is close enough to target
-			double rot_radians = _robot.heading.radians();
+			double rot_radians = _robot.heading.getRadians();
 			pPos = {(_target.x - _robot.pos.x) * pPosWeight, (_target.y - _robot.pos.y) * pPosWeight};
 			iPos = {(iPos.x + pPos.x) * cos(rot_radians), (iPos.y + pPos.y) * cos(rot_radians)};
 			dPos = {original_x - (_robot.pos.x * dPosWeight), original_y - (_robot.pos.y * dPosWeight)};
 			Vector2 PID = {(pPos.x + (iPos.x * iPosWeight) + (dPos.x * dPosWeight)) * sin(rot_radians), (pPos.y + (iPos.y * iPosWeight) + (dPos.y * dPosWeight)) * cos(rot_radians)};
 			//| rotation -
-			float target_rotation = degreesTo(_robot.pos, _target);
+			float target_rotation = degreesTill(_robot.pos, _target);
 			pRot = (target_rotation - pRot) * pRotWeight;
 			iRot += pRot;
-			dRot = original_rot - _robot.heading.degrees();
+			// FIXME:
+			dRot = original_rot - _robot.heading.getDegrees();
 			PID_rot = ((pRot + (iRot * iRotWeight) + (dRot * dRotWeight)) * auton_rot);
 		}
 };
 
+
+// MARK: Cust Globals
+array<DrivetrainMotor, 4> drivetrain = {DrivetrainMotor(topLeft, true), DrivetrainMotor(bottomLeft, true), DrivetrainMotor(topRight, false), DrivetrainMotor(bottomRight, false)};
+Robot robot = Robot(drivetrain);
+PID_Controller pidController = PID_Controller();
+vector<Point> autonPoints = {
+	{0, 0},
+	{0, 24},
+	{12, 12}
+};
+
+uint16_t buttons = {0};
+uint16_t buttonsNewPress = {0};
+DrivingMode drivingMode = DrivingMode::SINGLE_JOYSTICK;
+
+
+
+
+
 //| NON-DEFAULT FUNCTIONS |//
-// MARK: Utilities
-inline double toRadians(float degrees) {
-	return degrees * (PI / 180);
-}
+// MARK: Cust. Utils
 
-inline double toDegrees(double radians) {
-	return radians * (180 / PI);
-}
-
-inline double truncate(double num, int cutoff = 2) {
-	return floor(num * pow(10, cutoff)) / pow(10, cutoff);
-}
-
-inline int sign(float input) {
-	return (input >= 0) ? 1 : -1;
-}
-
-inline double map_value(float input, float input_start, float input_end, float output_start, double output_end) {
-    return output_start + (output_end - output_start) * ((input - input_start) / (input_end - input_start));
-}
-
-inline float degreesTo(Vector2 from, Vector2 to) {
-	return toDegrees(atan2(to.y - from.y, to.x - from.x));
-}
-
-inline float radiansTo(Vector2 from, Vector2 to) {
-	return atan2(to.y - from.y, to.x - from.x);
-}
-
-void wait(float time) {
+void wait(int time) {
 	pros::delay(time);
 }
 
@@ -343,23 +365,38 @@ void println(const T& input, int row = 1) {
 
 // Updates button as a uint16_t
 void updateControllerData() {
+	buttons = 0;
 	buttons = buttons
-	| (static_cast<uint8_t>(Button::A) * controller.get_digital(ControllerDigitalA))
-	| (static_cast<uint8_t>(Button::B) * controller.get_digital(ControllerDigitalB))
-	| (static_cast<uint8_t>(Button::X) * controller.get_digital(ControllerDigitalX))
-	| (static_cast<uint8_t>(Button::Y) * controller.get_digital(ControllerDigitalY))
-	| (static_cast<uint8_t>(Button::Up) * controller.get_digital(ControllerDigitalUp))
-	| (static_cast<uint8_t>(Button::Down) * controller.get_digital(ControllerDigitalDown))
-	| (static_cast<uint8_t>(Button::Left) * controller.get_digital(ControllerDigitalLeft))
-	| (static_cast<uint8_t>(Button::Right) * controller.get_digital(ControllerDigitalRight))
-	| (static_cast<uint8_t>(Button::R1) * controller.get_digital(ControllerDigitalR1))
-	| (static_cast<uint8_t>(Button::R1) * controller.get_digital(ControllerDigitalR2))
-	| (static_cast<uint8_t>(Button::L1) * controller.get_digital(ControllerDigitalL1))
-	| (static_cast<uint8_t>(Button::L1) * controller.get_digital(ControllerDigitalL2));
-	rightAnalogX = controller.get_analog(ControllerAnalogRightX);
-	rightAnalogY = controller.get_analog(ControllerAnalogRightY);
-	leftAnalogX = controller.get_analog(ControllerAnalogLeftY);
-	leftAnalogY = controller.get_analog(ControllerAnalogLeftY);
+	| (static_cast<uint16_t>(Button::A) * controller.get_digital(ControllerDigitalA))
+	| (static_cast<uint16_t>(Button::B) * controller.get_digital(ControllerDigitalB))
+	| (static_cast<uint16_t>(Button::X) * controller.get_digital(ControllerDigitalX))
+	| (static_cast<uint16_t>(Button::Y) * controller.get_digital(ControllerDigitalY))
+	| (static_cast<uint16_t>(Button::Up) * controller.get_digital(ControllerDigitalUp))
+	| (static_cast<uint16_t>(Button::Down) * controller.get_digital(ControllerDigitalDown))
+	| (static_cast<uint16_t>(Button::Left) * controller.get_digital(ControllerDigitalLeft))
+	| (static_cast<uint16_t>(Button::Right) * controller.get_digital(ControllerDigitalRight))
+	| (static_cast<uint16_t>(Button::R1) * controller.get_digital(ControllerDigitalR1))
+	| (static_cast<uint16_t>(Button::R2) * controller.get_digital(ControllerDigitalR2))
+	| (static_cast<uint16_t>(Button::L1) * controller.get_digital(ControllerDigitalL1))
+	| (static_cast<uint16_t>(Button::L2) * controller.get_digital(ControllerDigitalL2));
+	buttonsNewPress = 0;
+	buttonsNewPress = buttonsNewPress
+	| (static_cast<uint16_t>(Button::A) * controller.get_digital_new_press(ControllerDigitalA))
+	| (static_cast<uint16_t>(Button::B) * controller.get_digital_new_press(ControllerDigitalB))
+	| (static_cast<uint16_t>(Button::X) * controller.get_digital_new_press(ControllerDigitalX))
+	| (static_cast<uint16_t>(Button::Y) * controller.get_digital_new_press(ControllerDigitalY))
+	| (static_cast<uint16_t>(Button::Up) * controller.get_digital_new_press(ControllerDigitalUp))
+	| (static_cast<uint16_t>(Button::Down) * controller.get_digital_new_press(ControllerDigitalDown))
+	| (static_cast<uint16_t>(Button::Left) * controller.get_digital_new_press(ControllerDigitalLeft))
+	| (static_cast<uint16_t>(Button::Right) * controller.get_digital_new_press(ControllerDigitalRight))
+	| (static_cast<uint16_t>(Button::R1) * controller.get_digital_new_press(ControllerDigitalR1))
+	| (static_cast<uint16_t>(Button::R2) * controller.get_digital_new_press(ControllerDigitalR2))
+	| (static_cast<uint16_t>(Button::L1) * controller.get_digital_new_press(ControllerDigitalL1))
+	| (static_cast<uint16_t>(Button::L2) * controller.get_digital_new_press(ControllerDigitalL2));
+	rightAnalogX = (controller.get_analog(ControllerAnalogRightX) / 127) * 100; // 127 is max value from get_analog, turn to percent
+	rightAnalogY = (controller.get_analog(ControllerAnalogRightY) / 127) * 100;
+	leftAnalogX = (controller.get_analog(ControllerAnalogLeftX) / 127) * 100;
+	leftAnalogY = (controller.get_analog(ControllerAnalogLeftY) / 127) * 100;
 }
 
 
@@ -377,14 +414,6 @@ void checkPauseProgram() { /// REMOVE THIS FUNCTION FOR FINAL COMPETITION
 // MARK: Move Funcs
 //| MOVEMENT FUNCTIONS
 
-// Moves drivetrain wheels
-void moveWheels(float speedLeft, float speedRight) {
-	topLeft.move_velocity(speedLeft * 600);
-	bottomLeft.move_velocity(speedLeft * 600);
-	topRight.move_velocity(speedRight * 600);
-	bottomRight.move_velocity(speedRight * 600);
-}
-
 void brakeWheels() {
 	topLeft.brake();
 	bottomLeft.brake();
@@ -401,7 +430,7 @@ void initialize() {
 	configureMotors();
 	pros::lcd::initialize();
 	inertial.reset();
-	wait(2300);
+	wait(2300); // Wait for inertial to calibrate
 }
 
 /**
@@ -438,8 +467,8 @@ Vector2 updatePID(Vector2 target) {
 	//|    PID    |//
 	//| distance -
 	
-	double rot_radians = robot.heading.radians();
-	PID_Controller.update(target, robot);
+	double rot_radians = robot.heading.getRadians();
+	pidController.update(target, robot);
 	
 }
 
@@ -479,50 +508,46 @@ void autonomous() {
 	Point prevPoint = robot.pos;
 	Vector2 curTargetLoc = {0, 0};
 	Vector2 prevTargetLoc = {0, 0};
-	for (int ptIdx = 0; ptIdx < autonPoints.size(); ptIdx++) {
-		Point &point = autonPoints.at(ptIdx);
-		while (!point.visited) {
-			curTargetLoc = getPurePursuitLoc(robotCheckRadius, point.pos, prevTargetLoc);
-			updatePID(curTargetLoc);
-		}
-	}
+	// for (size_t ptIdx = 0; ptIdx < autonPoints.size(); ptIdx++) {
+	// 	Point &point = autonPoints.at(ptIdx);
+	// 	while (!point.visited) {
+	// 		curTargetLoc = getPurePursuitLoc(robotCheckRadius, point.pos, prevTargetLoc);
+	// 		updatePID(curTargetLoc);
+	// 	}
+	// }
 }
 
 // MARK: Driving
-void drivePipeline(float driveSpeed) {
+void drivePipeline(float driveSpeedMult) {
 	// Controller analog is -1 to 1
-	float left_speed;
-	float right_speed;
-	if (buttons & Button::X) {
-		drivingMode = drivingMode == SINGLE_JOYSTICK ? TANK : SINGLE_JOYSTICK;
+	float left_speed = 0, right_speed = 0;
+	if (buttonsNewPress & Button::X) {
+		drivingMode = (drivingMode == DrivingMode::SINGLE_JOYSTICK) ? DrivingMode::TANK : DrivingMode::SINGLE_JOYSTICK;
 	}
-	if (buttons & Button::Y) {
-		loaderRod.toggle();
+	if (drivingMode == DrivingMode::SINGLE_JOYSTICK) {
+		left_speed = (leftAnalogY * (driveSpeedMult / 100)) + (leftAnalogX * (driveSpeedMult / 100) * 0.75f);
+		right_speed = (leftAnalogY * (driveSpeedMult / 100)) - (leftAnalogX * (driveSpeedMult / 100) * 0.75f);
+	} else if (drivingMode == DrivingMode::TANK) {
+		left_speed = (leftAnalogY * -(driveSpeedMult / 100));
+		right_speed = (rightAnalogY * (driveSpeedMult / 100));
 	}
-	if (drivingMode == SINGLE_JOYSTICK) {
-		float left_speed = (leftAnalogY * (driveSpeed / 100)) + (leftAnalogX * (driveSpeed / 150));
-		float right_speed = (leftAnalogY * (driveSpeed / 100)) - (leftAnalogX * (driveSpeed / 150));
-	} else {
-		float left_speed = (leftAnalogY * (driveSpeed / 100));
-		float right_speed = (rightAnalogY * (driveSpeed / 100));
-	}
-	// FIXME: Not supposed to be multiplied by 600
-	moveWheels(min(left_speed * 600, 600.0f), min(right_speed * 600, 600.0f));
+	robot.moveWheels(left_speed, right_speed);
 	trackPosition();
 }
 
 // MARK: Scoring
-void scorePipeline(float *driveSpeed, float *elevatorSpeed) {
+void scorePipeline(float *driveSpeedMult, float *elevatorSpeed) {
 	float maxElevatorSpeed = 200.0f;
 	uint16_t first_pressed = 0;
-	if (buttons & Button::Up && first_pressed != static_cast<uint16_t>(Button::Down)) {
-		first_pressed = static_cast<uint16_t>(Button::Up);
-		*driveSpeed += 10;
-	} if (buttons & Button::Down && first_pressed != static_cast<uint16_t>(Button::Up)) {
-		first_pressed = static_cast<uint16_t>(Button::Down);
-		*driveSpeed -= 10;
+	if (buttonsNewPress & Button::A) {
+		loaderRod.toggle();
 	}
-	if (controller.get_digital(ControllerDigitalR2)) {
+	if (buttonsNewPress & Button::Up) {
+		*driveSpeedMult += 10;
+	} if (buttons & Button::Down && first_pressed != Button::Up) {
+		*driveSpeedMult -= 10;
+	}
+	if (buttons & Button::R2) {
 		conveyor.move_velocity(*elevatorSpeed);
 		intake.brake();
 		bandRotatorBottom.brake();
@@ -530,8 +555,8 @@ void scorePipeline(float *driveSpeed, float *elevatorSpeed) {
 		agitator.brake();
 		*elevatorSpeed -= 3;
 		*elevatorSpeed = max(*elevatorSpeed, -1.0f * maxElevatorSpeed);
-	} else if (controller.get_digital(ControllerDigitalR1) and first_pressed != static_cast<uint16_t>(Button::L1)) {
-		first_pressed = static_cast<uint16_t>(Button::R1);
+	} else if (buttons & Button::R1 && first_pressed != Button::L1) {
+		first_pressed = Button::R1;
 		conveyor.move_velocity(*elevatorSpeed);
 		bandRotatorTop.set_reversed(true);
 		bandRotatorTop.move_velocity(275);
@@ -540,8 +565,8 @@ void scorePipeline(float *driveSpeed, float *elevatorSpeed) {
 		*elevatorSpeed += 3;
 		*elevatorSpeed = min(*elevatorSpeed, maxElevatorSpeed);
 		agitator.move_velocity(200);
-	} else if (controller.get_digital(ControllerDigitalL1) and first_pressed != static_cast<uint16_t>(Button::R1)) {
-		first_pressed = static_cast<uint16_t>(Button::L1);
+	} else if (buttons & Button::L1 && first_pressed != Button::R1) {
+		first_pressed = Button::L1;
 		conveyor.move_velocity(*elevatorSpeed);
 		bandRotatorTop.set_reversed(false);
 		bandRotatorTop.move_velocity(275);
@@ -565,15 +590,15 @@ void scorePipeline(float *driveSpeed, float *elevatorSpeed) {
 // MARK: opcontrol
 void opcontrol() {
 	// 72 inches across the field
-	float drive_speed = 100.0f;
+	float driveSpeedMult = 100.0f;
 	float elevator_speed = 100.0f;
 	clear_screen();
 	wait(1000);
 	while (true) {
 		updateControllerData();
 		robot.updateData();
-		drivePipeline(drive_speed);
-		scorePipeline(&drive_speed, &elevator_speed);
+		drivePipeline(driveSpeedMult);
+		scorePipeline(&driveSpeedMult, &elevator_speed);
 		wait(frame);
 	}
 	controller.rumble("-");
