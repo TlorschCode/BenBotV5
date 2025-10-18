@@ -85,15 +85,16 @@ class Robot {  // Robot class for more readable code
 			wheels.at(3).brake();
 		}
 		void updateOdometry() {
+			float allRotPrev = 0.0f;
 			uint32_t now = pros::millis();
 			heading.setDegrees(truncate(inertial.get_rotation()));
 			float leftMotorsPos = (wheels.at(0).rawMotor.get_raw_position(&now) + wheels.at(1).rawMotor.get_raw_position(&now)) / 2;
 			float rightMotorsPos = (wheels.at(2).rawMotor.get_raw_position(&now) + wheels.at(3).rawMotor.get_raw_position(&now)) / 2;
 			float averageWheelRot = (leftMotorsPos + rightMotorsPos) / 2;
-			float wheelRotDelta = averageWheelRot - all_rot_prev;
+			float wheelRotDelta = averageWheelRot - allRotPrev;
 			pos.x += ((wheelRotDelta / 360) * GEAR_RATIO * WHEEL_CIRCUMFERENCE) * sin(heading.getRadians());
 			pos.y += ((wheelRotDelta / 360) * GEAR_RATIO * WHEEL_CIRCUMFERENCE) * cos(heading.getRadians());
-			all_rot_prev = averageWheelRot;
+			allRotPrev = averageWheelRot;
 		}
 };
 

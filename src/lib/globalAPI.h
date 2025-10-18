@@ -1,5 +1,6 @@
 #pragma once
 #include "main.h"
+#include <string>
 #include <cmath>
 
 constexpr double PI = 3.14159265358979323846;
@@ -8,14 +9,14 @@ constexpr float WHEEL_CIRCUMFERENCE = {12.56f}; //  inches
 constexpr float FRAME = {10}; // Frame time
 
 template <typename T>
-void println(const T& input, int row = 1) {
-    string printtext;
-    if constexpr (is_same_v<T, string> || is_same_v<T, const char*>) {
+void printOnScreen(const T& input, int row = 1) {
+    std::string printtext;
+    if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, const char*>) {
         // Handle string and C-style string types
         printtext = input;
     } else {
         // Handle other types using stringstream
-        stringstream ss;
+        std::stringstream ss;
         ss << input;
         printtext = ss.str();
     }
@@ -42,6 +43,56 @@ struct Vector2 {
         return Vector2(x * other.x, y * other.y);
     }
 };
+
+class UnitInterval {
+private:
+    float value;
+    static float clamp(float v) {
+        if (v < 0.0f) return 0.0f;
+        if (v > 1.0f) return 1.0f;
+        return v;
+    }
+public:
+    // Constructors
+    UnitInterval(float v = 0.0f) : value(clamp(v)) {}
+    // Implicit conversion to float
+    operator float() const { return value; }
+    operator double() const { return value; }
+    // Assignment from float
+    inline UnitInterval& operator=(float v) {
+        value = clamp(v);
+        return *this;
+    }
+    inline UnitInterval& operator=(double v) {
+        value = clamp(v);
+        return *this;
+    }
+    // Arithmetic with UnitInterval
+    inline UnitInterval operator+(const UnitInterval& other) const { return UnitInterval(clamp(value + other.value)); }
+    inline UnitInterval operator-(const UnitInterval& other) const { return UnitInterval(clamp(value - other.value)); }
+    inline UnitInterval operator*(const UnitInterval& other) const { return UnitInterval(clamp(value * other.value)); }
+    inline UnitInterval operator/(const UnitInterval& other) const { return UnitInterval(clamp(value / other.value)); }
+
+    // Arithmetic with floats
+    inline UnitInterval operator+(float f) const { return UnitInterval(clamp(value + f)); }
+    inline UnitInterval operator-(float f) const { return UnitInterval(clamp(value - f)); }
+    inline UnitInterval operator*(float f) const { return UnitInterval(clamp(value * f)); }
+    inline UnitInterval operator/(float f) const { return UnitInterval(clamp(value / f)); }
+
+    // Arithmetic with floats
+    inline UnitInterval operator+(double f) const { return UnitInterval(clamp(value + f)); }
+    inline UnitInterval operator-(double f) const { return UnitInterval(clamp(value - f)); }
+    inline UnitInterval operator*(double f) const { return UnitInterval(clamp(value * f)); }
+    inline UnitInterval operator/(double f) const { return UnitInterval(clamp(value / f)); }
+
+    // Optional getter
+    float get() const { return value; }
+};
+inline UnitInterval operator+(float f, const UnitInterval& u) { return UnitInterval(f + float(u)); }
+inline UnitInterval operator-(float f, const UnitInterval& u) { return UnitInterval(f - float(u)); }
+inline UnitInterval operator*(float f, const UnitInterval& u) { return UnitInterval(f * float(u)); }
+inline UnitInterval operator/(float f, const UnitInterval& u) { return UnitInterval(f / float(u)); }
+
 
 // MARK: Utilities
 inline double toRadians(float degrees) {

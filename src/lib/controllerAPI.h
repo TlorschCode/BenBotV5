@@ -1,25 +1,6 @@
 #pragma once
 #include "globalAPI.h"
 
-constexpr pros::controller_analog_e_t ControllerAnalogLeftX = pros::E_CONTROLLER_ANALOG_LEFT_X;
-constexpr pros::controller_analog_e_t ControllerAnalogLeftY = pros::E_CONTROLLER_ANALOG_LEFT_Y;
-constexpr pros::controller_analog_e_t ControllerAnalogRightX = pros::E_CONTROLLER_ANALOG_RIGHT_X;
-constexpr pros::controller_analog_e_t ControllerAnalogRightY = pros::E_CONTROLLER_ANALOG_RIGHT_Y;
-
-
-constexpr pros::controller_digital_e_t ControllerDigitalA = pros::E_CONTROLLER_DIGITAL_A;
-constexpr pros::controller_digital_e_t ControllerDigitalB = pros::E_CONTROLLER_DIGITAL_B;
-constexpr pros::controller_digital_e_t ControllerDigitalX = pros::E_CONTROLLER_DIGITAL_X;
-constexpr pros::controller_digital_e_t ControllerDigitalY = pros::E_CONTROLLER_DIGITAL_Y;
-constexpr pros::controller_digital_e_t ControllerDigitalUp = pros::E_CONTROLLER_DIGITAL_UP;
-constexpr pros::controller_digital_e_t ControllerDigitalDown = pros::E_CONTROLLER_DIGITAL_DOWN;
-constexpr pros::controller_digital_e_t ControllerDigitalLeft = pros::E_CONTROLLER_DIGITAL_LEFT;
-constexpr pros::controller_digital_e_t ControllerDigitalRight = pros::E_CONTROLLER_DIGITAL_RIGHT;
-constexpr pros::controller_digital_e_t ControllerDigitalR1 = pros::E_CONTROLLER_DIGITAL_R1;
-constexpr pros::controller_digital_e_t ControllerDigitalR2 = pros::E_CONTROLLER_DIGITAL_R2;
-constexpr pros::controller_digital_e_t ControllerDigitalL1 = pros::E_CONTROLLER_DIGITAL_L1;
-constexpr pros::controller_digital_e_t ControllerDigitalL2 = pros::E_CONTROLLER_DIGITAL_L2;
-
 namespace ctrlAPI {
 enum Button : uint16_t {
 	None = 0,
@@ -39,10 +20,32 @@ enum Button : uint16_t {
 
 class Controller {
     private:
+        static constexpr uint16_t L_R_btnMask = Button::R2 | Button::R1 | Button::L2 | Button::L1;
+        static constexpr pros::controller_analog_e_t ControllerAnalogLeftX = pros::E_CONTROLLER_ANALOG_LEFT_X;
+        static constexpr pros::controller_analog_e_t ControllerAnalogLeftY = pros::E_CONTROLLER_ANALOG_LEFT_Y;
+        static constexpr pros::controller_analog_e_t ControllerAnalogRightX = pros::E_CONTROLLER_ANALOG_RIGHT_X;
+        static constexpr pros::controller_analog_e_t ControllerAnalogRightY = pros::E_CONTROLLER_ANALOG_RIGHT_Y;
+
+        static constexpr pros::controller_digital_e_t ControllerDigitalA = pros::E_CONTROLLER_DIGITAL_A;
+        static constexpr pros::controller_digital_e_t ControllerDigitalB = pros::E_CONTROLLER_DIGITAL_B;
+        static constexpr pros::controller_digital_e_t ControllerDigitalX = pros::E_CONTROLLER_DIGITAL_X;
+        static constexpr pros::controller_digital_e_t ControllerDigitalY = pros::E_CONTROLLER_DIGITAL_Y;
+        static constexpr pros::controller_digital_e_t ControllerDigitalUp = pros::E_CONTROLLER_DIGITAL_UP;
+        static constexpr pros::controller_digital_e_t ControllerDigitalDown = pros::E_CONTROLLER_DIGITAL_DOWN;
+        static constexpr pros::controller_digital_e_t ControllerDigitalLeft = pros::E_CONTROLLER_DIGITAL_LEFT;
+        static constexpr pros::controller_digital_e_t ControllerDigitalRight = pros::E_CONTROLLER_DIGITAL_RIGHT;
+        static constexpr pros::controller_digital_e_t ControllerDigitalR1 = pros::E_CONTROLLER_DIGITAL_R1;
+        static constexpr pros::controller_digital_e_t ControllerDigitalR2 = pros::E_CONTROLLER_DIGITAL_R2;
+        static constexpr pros::controller_digital_e_t ControllerDigitalL1 = pros::E_CONTROLLER_DIGITAL_L1;
+        static constexpr pros::controller_digital_e_t ControllerDigitalL2 = pros::E_CONTROLLER_DIGITAL_L2;
     public:
         pros::Controller rawController;
         uint16_t buttons = 0;
         uint16_t buttonsNewPress = 0;
+        float rightAnalogX = {0};
+        float rightAnalogY = {0};
+        float leftAnalogX = {0};
+        float leftAnalogY = {0};
         Controller(pros::Controller _controller) : rawController(_controller) {};
         void updateInputData() {
             buttons = 0;
@@ -83,6 +86,9 @@ class Controller {
         }
         inline bool getNewPress(Button btn) const {
             return buttonsNewPress & btn;
+        }
+        inline bool otherScoringPressed(Button btn) const {
+            return (buttons & L_R_btnMask) & btn;
         }
 };
 } // namespace controllerAPI
