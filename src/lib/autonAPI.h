@@ -47,30 +47,30 @@ class PID_Controller {
 #include "robotAPI.h"
 namespace autonAPI {
 inline void PID_Controller::update(Vec2 &_target) {
-    robotAPI::Robot &dereffedRobot = *robot;
-	float PID_pos;
-	float PID_rot;
-    const float targetRot = degreesTill(dereffedRobot.pos, _target);
-    const bool doRotCalcs = (targetRot - dereffedRobot.heading.getDegrees()) > 10; // flag if heading is close enough to target // FIXME: Not set correctly
-    const double rot_radians = dereffedRobot.heading.getRadians();
+    // robotAPI::Robot &dereffedRobot = *robot;
+	// float PID_pos;
+	// float PID_rot;
+    // const float targetRot = degreesTill(dereffedRobot.pos, _target);
+    // const bool doRotCalcs = (targetRot - dereffedRobot.heading.getDegrees()) > 10; // flag if heading is close enough to target // FIXME: Not set correctly
+    // const double rot_radians = dereffedRobot.heading.getRadians();
 
-    pPos = {(_target.x - dereffedRobot.pos.x) * pPos.weight, (_target.y - dereffedRobot.pos.y) * pPos.weight};
-    iPos += Vec2{(iPos.x + pPos.x) * sin(rot_radians), (iPos.y + pPos.y) * cos(rot_radians)};
-    dPos = (prev_pPos - pPos) * dPos.weight;
-	prev_pPos = pPos;
+    // pPos = {(_target.x - dereffedRobot.pos.x) * pPos.weight, (_target.y - dereffedRobot.pos.y) * pPos.weight};
+    // iPos += Vec2{(iPos.x + pPos.x) * sin(rot_radians), (iPos.y + pPos.y) * cos(rot_radians)};
+    // dPos = (prev_pPos - pPos) * dPos.weight;
+	// prev_pPos = pPos;
 
-    const Vec2 PID_pos = {(pPos.x + (iPos.x * iPos.weight) + (dPos.x * dPos.weight)) * sin(rot_radians), (pPos.y + (iPos.y * iPos.weight) + (dPos.y * dPos.weight)) * cos(rot_radians)};
-    //| rotation
-	if (doRotCalcs) {
-    	PID_rot = ((pRot + (iRot * iRot.weight) + (dRot * dRot.weight))).val;
-	} else {
-		PID_rot = 0;
-	}
-	pRot = (targetRot - pRot) * pRot.weight;
-	iRot += pRot * iRot.weight;
-	dRot = (prev_pRot - dereffedRobot.heading.getDegrees()) * dRot.weight;
-	prev_pRot = pRot.val;
-	// FIXME: set linear and rot speed
+    // const Vec2 PID_pos = {(pPos.x + (iPos.x * iPos.weight) + (dPos.x * dPos.weight)) * sin(rot_radians), (pPos.y + (iPos.y * iPos.weight) + (dPos.y * dPos.weight)) * cos(rot_radians)};
+    // //| rotation
+	// if (doRotCalcs) {
+    // 	PID_rot = ((pRot + (iRot * iRot.weight) + (dRot * dRot.weight))).val;
+	// } else {
+	// 	PID_rot = 0;
+	// }
+	// pRot = (targetRot - pRot) * pRot.weight;
+	// iRot += pRot * iRot.weight;
+	// dRot = (prev_pRot - dereffedRobot.heading.getDegrees()) * dRot.weight;
+	// prev_pRot = pRot.val;
+	// // FIXME: set linear and rot speed
 }
 
 inline Vec2 PID_Controller::getPurePursuitLoc(float &checkRadius, Vec2 &target, Vec2 &prevTarget) {

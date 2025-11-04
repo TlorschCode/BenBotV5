@@ -8,6 +8,10 @@ constexpr float GEAR_RATIO = {0.5f}; // Wheel-motor gear ratio
 constexpr float WHEEL_CIRCUMFERENCE = {12.56f}; //  inches
 constexpr float FRAME = {10}; // Frame time
 
+// MARK: Predec
+struct Vec2;
+struct W_Vec2;
+
 template <typename T>
 void printOnScreen(const T& input, int row = 1) {
     std::string printtext;
@@ -26,44 +30,28 @@ void printOnScreen(const T& input, int row = 1) {
 struct Vec2 {
     float x;
     float y;
-    constexpr Vec2(float _x=0.0f, float _y=0.0f) noexcept
+
+    constexpr Vec2(float _x = 0.0f, float _y = 0.0f) noexcept
         : x(_x), y(_y) {}
-    // --- Vec2 <op> Vec2
+
+    // Vec2 <op> Vec2
     constexpr inline Vec2 operator+(const Vec2& a) const noexcept { return {x + a.x, y + a.y}; }
     constexpr inline Vec2 operator-(const Vec2& a) const noexcept { return {x - a.x, y - a.y}; }
     constexpr inline Vec2 operator*(const Vec2& a) const noexcept { return {x * a.x, y * a.y}; }
     constexpr inline Vec2 operator/(const Vec2& a) const noexcept { return {x / a.x, y / a.y}; }
-    // --- Vec2 <op> W_Vec2
-    constexpr inline Vec2 operator+(const W_Vec2& a) const noexcept { return {x + a.x, y + a.y}; }
-    constexpr inline Vec2 operator-(const W_Vec2& a) const noexcept { return {x - a.x, y - a.y}; }
-    constexpr inline Vec2 operator*(const W_Vec2& a) const noexcept { return {x * a.x, y * a.y}; }
-    constexpr inline Vec2 operator/(const W_Vec2& a) const noexcept { return {x / a.x, y / a.y}; }
-    // --- Vec2 <op> float
+
+    // Vec2 <op> float
     constexpr inline Vec2 operator*(const float& a) const noexcept { return {x * a, y * a}; }
     constexpr inline Vec2 operator/(const float& a) const noexcept { return {x / a, y / a}; }
-    // --- Compound assignment (modifies self)
+
+    // Compound assignments for Vec2
     constexpr inline Vec2& operator+=(const Vec2& a) noexcept { x += a.x; y += a.y; return *this; }
     constexpr inline Vec2& operator-=(const Vec2& a) noexcept { x -= a.x; y -= a.y; return *this; }
     constexpr inline Vec2& operator*=(const Vec2& a) noexcept { x *= a.x; y *= a.y; return *this; }
     constexpr inline Vec2& operator/=(const Vec2& a) noexcept { x /= a.x; y /= a.y; return *this; }
-
-    constexpr inline Vec2& operator+=(const W_Vec2& a) noexcept { x += a.x; y += a.y; return *this; }
-    constexpr inline Vec2& operator-=(const W_Vec2& a) noexcept { x -= a.x; y -= a.y; return *this; }
-    constexpr inline Vec2& operator*=(const W_Vec2& a) noexcept { x *= a.x; y *= a.y; return *this; }
-    constexpr inline Vec2& operator/=(const W_Vec2& a) noexcept { x /= a.x; y /= a.y; return *this; }
-
-    constexpr inline Vec2& operator*=(const float& a) noexcept { x *= a, y *= a; return *this; }
-    constexpr inline Vec2& operator/=(const float& a) noexcept { x /= a, y /= a; return *this; }
-    // --- Assign from W_Vec2
-    constexpr inline Vec2& operator=(const W_Vec2& a) noexcept { x = a.x; y = a.y; return *this; }
+    constexpr inline Vec2& operator*=(const float& a) noexcept { x *= a; y *= a; return *this; }
+    constexpr inline Vec2& operator/=(const float& a) noexcept { x /= a; y /= a; return *this; }
 };
-// --- Symmetric non-member overloads (W_Vec2 <op> Vec2)
-constexpr inline Vec2 operator+(const W_Vec2& a, const Vec2& b) noexcept { return {a.x + b.x, a.y + b.y}; }
-constexpr inline Vec2 operator-(const W_Vec2& a, const Vec2& b) noexcept { return {a.x - b.x, a.y - b.y}; }
-constexpr inline Vec2 operator*(const W_Vec2& a, const Vec2& b) noexcept { return {a.x * b.x, a.y * b.y}; }
-constexpr inline Vec2 operator/(const W_Vec2& a, const Vec2& b) noexcept { return {a.x / b.x, a.y / b.y}; }
-constexpr inline Vec2 operator*(const float& a, const Vec2& b) noexcept { return {b.x * a, b.y * a}; }
-constexpr inline Vec2 operator/(const float& a, const Vec2& b)noexcept { return {b.x / a, b.y / a}; }
 
 
 
@@ -122,19 +110,11 @@ struct W_Vec2 {
     float x;
     float y;
     float weight;
-    constexpr W_Vec2(float _x=0.0f, float _y=0.0f, float _weight=0.0f) noexcept
-        : x(_x), y(_y), weight(_weight) {}
-    // --- Member operators (W_Vec2 <op> Vec2 or W_Vec2)
-    constexpr inline Vec2 operator+(const Vec2& a) const noexcept { return {x + a.x, y + a.y}; }
-    constexpr inline Vec2 operator-(const Vec2& a) const noexcept { return {x - a.x, y - a.y}; }
-    constexpr inline Vec2 operator*(const Vec2& a) const noexcept { return {x * a.x, y * a.y}; }
-    constexpr inline Vec2 operator/(const Vec2& a) const noexcept { return {x / a.x, y / a.y}; }
 
-    constexpr inline Vec2 operator+(const W_Vec2& a) const noexcept { return {x + a.x, y + a.y}; }
-    constexpr inline Vec2 operator-(const W_Vec2& a) const noexcept { return {x - a.x, y - a.y}; }
-    constexpr inline Vec2 operator*(const W_Vec2& a) const noexcept { return {x * a.x, y * a.y}; }
-    constexpr inline Vec2 operator/(const W_Vec2& a) const noexcept { return {x / a.x, y / a.y}; }
-    // --- Compound assignment (modifies self)
+    constexpr W_Vec2(float _x = 0.0f, float _y = 0.0f, float _weight = 0.0f) noexcept
+        : x(_x), y(_y), weight(_weight) {}
+
+    // Member compound assignments (W_Vec2 <op>= Vec2 or W_Vec2)
     constexpr inline W_Vec2& operator+=(const Vec2& a) noexcept { x += a.x; y += a.y; return *this; }
     constexpr inline W_Vec2& operator-=(const Vec2& a) noexcept { x -= a.x; y -= a.y; return *this; }
     constexpr inline W_Vec2& operator*=(const Vec2& a) noexcept { x *= a.x; y *= a.y; return *this; }
@@ -144,14 +124,23 @@ struct W_Vec2 {
     constexpr inline W_Vec2& operator-=(const W_Vec2& a) noexcept { x -= a.x; y -= a.y; return *this; }
     constexpr inline W_Vec2& operator*=(const W_Vec2& a) noexcept { x *= a.x; y *= a.y; return *this; }
     constexpr inline W_Vec2& operator/=(const W_Vec2& a) noexcept { x /= a.x; y /= a.y; return *this; }
-    // --- assign
-    constexpr inline W_Vec2& operator=(const Vec2& a) noexcept { x = a.x, y = a.y; return *this; }
+
+    // Assign from Vec2
+    constexpr inline W_Vec2& operator=(const Vec2& a) noexcept { x = a.x; y = a.y; return *this; }
 };
-// --- Symmetric non-member overloads (Vec2 <op> W_Vec2)
 constexpr inline Vec2 operator+(const Vec2& a, const W_Vec2& b) noexcept { return {a.x + b.x, a.y + b.y}; }
 constexpr inline Vec2 operator-(const Vec2& a, const W_Vec2& b) noexcept { return {a.x - b.x, a.y - b.y}; }
 constexpr inline Vec2 operator*(const Vec2& a, const W_Vec2& b) noexcept { return {a.x * b.x, a.y * b.y}; }
 constexpr inline Vec2 operator/(const Vec2& a, const W_Vec2& b) noexcept { return {a.x / b.x, a.y / b.y}; }
+
+constexpr inline Vec2 operator+(const W_Vec2& a, const Vec2& b) noexcept { return {a.x + b.x, a.y + b.y}; }
+constexpr inline Vec2 operator-(const W_Vec2& a, const Vec2& b) noexcept { return {a.x - b.x, a.y - b.y}; }
+constexpr inline Vec2 operator*(const W_Vec2& a, const Vec2& b) noexcept { return {a.x * b.x, a.y * b.y}; }
+constexpr inline Vec2 operator/(const W_Vec2& a, const Vec2& b) noexcept { return {a.x / b.x, a.y / b.y}; }
+
+// Symmetric non-member float operators
+constexpr inline Vec2 operator*(const float& a, const Vec2& b) noexcept { return {b.x * a, b.y * a}; }
+constexpr inline Vec2 operator/(const float& a, const Vec2& b) noexcept { return {b.x / a, b.y / a}; }
 
 
 struct W_int {
