@@ -6,6 +6,9 @@ class Robot;
 namespace autonAPI {
 	class PID_Controller;
 }
+namespace driveAPI {
+	class DriveInstance;
+}
 
 namespace robotAPI {
 	
@@ -14,8 +17,10 @@ class DrivetrainMotor {
 	private:
 		int RPM;
 	public:
+		
 		pros::Motor rawMotor;
 		bool isLeftSide;
+		DrivetrainMotor() : rawMotor(pros::Motor(0, pros::v5::MotorGearset::green)) {}
 		DrivetrainMotor(pros::Motor &_motor, bool _isLeftSide) : rawMotor(_motor) {
 			isLeftSide = _isLeftSide;
 			if (isLeftSide) rawMotor.set_reversed(true);
@@ -65,13 +70,16 @@ class Heading {
 //MARK: ROBOT
 class Robot {  // Robot class for more readable code
 	private:
+		float allRotPrev = 0;
 	public:
-		Vector2 pos = {0, 0};
+		Vec2 pos = {0, 0};
 		Heading heading = {};
 		std::array<DrivetrainMotor, 4> wheels;
 		pros::Imu inertial;
-		// PID_Controller pidController();
+		autonAPI::PID_Controller PID_Controller();
+		driveAPI::DriveInstance DriveInstance();
 		Robot(std::array<DrivetrainMotor, 4> _wheels, pros::Imu _inertial) : wheels(_wheels), inertial(_inertial) {}
+		Robot() : inertial(pros::Imu(0)) {};
 		void moveWheels(float &speedLeftPercent, float &speedRightPercent) {
 			wheels.at(0).setVelocity(wheels.at(0).isLeftSide ? speedLeftPercent : speedRightPercent); // top left
 			wheels.at(1).setVelocity(wheels.at(1).isLeftSide ? speedLeftPercent : speedRightPercent); // bottom left
@@ -85,7 +93,6 @@ class Robot {  // Robot class for more readable code
 			wheels.at(3).brake();
 		}
 		void updateOdometry() {
-			float allRotPrev = 0.0f;
 			uint32_t now = pros::millis();
 			heading.setDegrees(truncate(inertial.get_rotation()));
 			float leftMotorsPos = (wheels.at(0).rawMotor.get_raw_position(&now) + wheels.at(1).rawMotor.get_raw_position(&now)) / 2;

@@ -85,12 +85,6 @@ void clear_screen() {
 
 //| RUNTIME FUNCTIONS:
 
-// Updates button as a uint16_t
-
-
-
-
-
 void checkPauseProgram() { /// REMOVE THIS FUNCTION FOR FINAL COMPETITION
 	if (controller.getNewPress(Button::X)) {
 		robot.brakeWheels();
@@ -100,9 +94,8 @@ void checkPauseProgram() { /// REMOVE THIS FUNCTION FOR FINAL COMPETITION
 	}
 }
 
-// MARK: Move Funcs
-//| MOVEMENT FUNCTIONS
 
+// MARK: Initialize
 //| DEFAULT FUNCTIONS |//
 void initialize() {
 	configureMotors();
@@ -111,6 +104,7 @@ void initialize() {
 	wait(2300); // Wait for inertial to calibrate
 }
 
+// MARK: Disabled
 /**
  * Runs while the robot is in the disabled state of Field Management System or
  * the VEX Competition Switch, following either autonomous or opcontrol. When
@@ -147,8 +141,8 @@ void autonomous() {
 	constexpr float robotCheckRadius = 10.0f;
 	autonAPI::Point target = autonPoints.at(0);
 	autonAPI::Point prevPoint = robot.pos;
-	Vector2 curTargetLoc = {0, 0};
-	Vector2 prevTargetLoc = {0, 0};
+	Vec2 curTargetLoc = {0, 0};
+	Vec2 prevTargetLoc = {0, 0};
 	float left_speed = 100, right_speed = 100;
 	wait(12000);
 	robot.moveWheels(left_speed, right_speed);
@@ -165,75 +159,59 @@ void autonomous() {
 
 
 // MARK: Driving
-void drivePipeline(float driveSpeedMult) {
-	
-
+void drivePipeline() {
 	float left_speed = 0, right_speed = 0;
 	if (controller.getNewPress(Button::X)) {
 		drivingMode = (drivingMode == DrivingMode::SINGLE_JOYSTICK) ? DrivingMode::TANK : DrivingMode::SINGLE_JOYSTICK;
 	}
 	if (drivingMode == DrivingMode::SINGLE_JOYSTICK) {
-		const float joystickRadians = atan2(controller.leftAnalogX / 100, controller.leftAnalogY / 100);
-		const float alteredAnalogX = controller.leftAnalogX * abs(sin(joystickRadians)) * (driveSpeedMult / 100);
-		const float alteredAnalogY = controller.leftAnalogY * abs(cos(joystickRadians)) * (driveSpeedMult / 100);
-		left_speed = alteredAnalogY + alteredAnalogX;
-		right_speed = alteredAnalogY - alteredAnalogX;
+		
 		// right_speed = (controller.leftAnalogY * cos(joystickRadians) * (driveSpeedMult / 100));
 		// left = analogX * abs(sin(atan2(analogX, analogY)));
 		// up = analogY * abs(cos(atan2(analogX, analogY)));
 		// left_speed = (up * reversed) - left;
 		// right_speed = (up * reversed) + left;
 	} else if (drivingMode == DrivingMode::TANK) {
-		left_speed = (controller.leftAnalogY * (driveSpeedMult / 100));
-		right_speed = (controller.rightAnalogY * (driveSpeedMult / 100));
+		
 	}
 	robot.moveWheels(left_speed, right_speed);
 }
 
 inline bool _otherBitsOn(const Button &curBtn, const uint16_t &mask) {
-	return mask & ~curBtn;
+	return btn_to_bool(mask & ~curBtn);
 }
 
 // MARK: Scoring
-void scorePipeline(float *driveSpeedMult) {
+void scorePipeline() {
 	float maxElevatorSpeed = 200.0f;
-	uint16_t first_pressed = 0;
 	if (controller.getNewPress(Button::A)) {
 		loaderRod.toggle();
 	}
-	if (controller.getNewPress(Button::Up)) {
-		*driveSpeedMult += 10;
-	} if (controller.getNewPress(Button::Down) && first_pressed != Button::Up) {
-		*driveSpeedMult -= 10;
-	}
-	if (controller.getPressing(Button::R2) && !controller.otherScoringPressed(Button::R2)) {
+	if (controller.getPressing(Button::R2) && !controller.otherL_or_RPressed(Button::R2)) {
 		conveyor.move_velocity(-200);
 		intake.brake();
 		bandRotatorBottom.brake();
 		bandRotatorTop.brake();
 		agitator.brake();
-	} else if (controller.getPressing(Button::R1) && !controller.otherScoringPressed(Button::R1)) {
-		first_pressed = Button::R1;
+	} else if (controller.getPressing(Button::R1) && !controller.otherL_or_RPressed(Button::R1)) {
 		conveyor.move_velocity(200);
 		bandRotatorTop.move_velocity(-275);
 		intake.move_velocity(200);
 		bandRotatorBottom.brake();
 		agitator.move_velocity(-200);
-	} else if (controller.getPressing(Button::L1) && !controller.otherScoringPressed(Button::L1)) {
-		first_pressed = Button::L1;
+	} else if (controller.getPressing(Button::L1) && !controller.otherL_or_RPressed(Button::L1)) {
 		conveyor.move_velocity(200);
 		bandRotatorTop.move_velocity(275);
 		bandRotatorBottom.move_velocity(200);
 		intake.brake();
 		agitator.move_velocity(-200);
-	} else if (controller.getPressing(Button::L2) && !controller.otherScoringPressed(Button::L2)) {
+	} else if (controller.getPressing(Button::L2) && !controller.otherL_or_RPressed(Button::L2)) {
 		conveyor.move_velocity(-200);
 		intake.move_velocity(-200);
 		bandRotatorBottom.brake();
 		bandRotatorTop.brake();
 		agitator.brake();
 	} else {
-		first_pressed = Button::None;
 		conveyor.brake();
 		bandRotatorTop.brake();
 		intake.brake();
@@ -247,7 +225,6 @@ void scorePipeline(float *driveSpeedMult) {
 void opcontrol() {
 	// autonomous();
 	// 72 inches across the field
-	float driveSpeedMult = 100.0f;
 	clear_screen();
 	// robot.moveWheels(driveSpeedMult, driveSpeedMult);
 	// wait(3000);
@@ -256,8 +233,8 @@ void opcontrol() {
 		if (robot.wheels.at(0).rawMotor.is_over_temp() || robot.wheels.at(1).rawMotor.is_over_temp() || robot.wheels.at(2).rawMotor.is_over_temp() || robot.wheels.at(3).rawMotor.is_over_temp()) break;
 		controller.updateInputData();
 		robot.updateOdometry();
-		drivePipeline(driveSpeedMult);
-		scorePipeline(&driveSpeedMult);
+		drivePipeline();
+		scorePipeline();
 		wait(FRAME);
 	}
 	controller.rawController.rumble("---");
