@@ -41,6 +41,7 @@ void configureMotors() {
 }
 pros::Imu inertial(5);
 pros::adi::Pneumatics loaderRod('A', false);
+pros::adi::Pneumatics descorer('B', false);
 
 
 
@@ -186,6 +187,9 @@ void scorePipeline() {
 	float maxElevatorSpeed = 200.0f;
 	if (controller.getNewPress(Button::A)) {
 		loaderRod.toggle();
+	}
+	if (controller.getNewPress(Button::B)) {
+		descorer.toggle();
 	}
 	if (controller.getPressing(Button::R2) && !controller.otherL_or_RPressed(Button::R2)) {
 		conveyor.move_velocity(-200);
