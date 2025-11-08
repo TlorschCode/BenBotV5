@@ -130,11 +130,12 @@ class Controller {
         pros::Controller rawController;
         uint16_t buttons = 0;
         uint16_t buttonsNewPress = 0;
-        float rightAnalogX = {0};
-        float rightAnalogY = {0};
-        float leftAnalogX = {0};
-        float leftAnalogY = {0};
+        float rightAnalogXPercent = {0};
+        float rightAnalogYPercent = {0};
+        float leftAnalogXPercent = {0};
+        float leftAnalogYPercent = {0};
         Controller(pros::Controller _controller) : rawController(_controller) {};
+        Controller() : rawController(pros::Controller(pros::E_CONTROLLER_MASTER)) {};
         void updateInputData() {
             buttons = 0;
             buttons = buttons
@@ -164,10 +165,10 @@ class Controller {
             | (Button::R2 * rawController.get_digital_new_press(ControllerDigitalR2))
             | (Button::L1 * rawController.get_digital_new_press(ControllerDigitalL1))
             | (Button::L2 * rawController.get_digital_new_press(ControllerDigitalL2)));
-            rightAnalogX = (rawController.get_analog(ControllerAnalogRightX) / 127) * 100; // 127 is max value from get_analog, turn to percent
-            rightAnalogY = (rawController.get_analog(ControllerAnalogRightY) / 127) * 100;
-            leftAnalogX = (rawController.get_analog(ControllerAnalogLeftX) / 127) * 100;
-            leftAnalogY = (rawController.get_analog(ControllerAnalogLeftY) / 127) * 100;
+            rightAnalogXPercent = (rawController.get_analog(ControllerAnalogRightX) / 127) * 100; // 127 is max value from get_analog, turn to percent
+            rightAnalogYPercent = (rawController.get_analog(ControllerAnalogRightY) / 127) * 100;
+            leftAnalogXPercent = (rawController.get_analog(ControllerAnalogLeftX) / 127) * 100;
+            leftAnalogYPercent = (rawController.get_analog(ControllerAnalogLeftY) / 127) * 100;
         }
         inline bool getPressing(Button btn) const {
             return btn_to_bool(buttons & btn);

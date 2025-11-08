@@ -1,3 +1,5 @@
+// MARK: FIXME
+// FIXME: Incorporate driveAPI, decouple functionality more effectively.
 #include "lib/mainAPI.h"
 #include <fstream>
 #include <string>
@@ -10,10 +12,7 @@
 
 using namespace std;
 using namespace ctrlAPI;
-using namespace driveAPI;
-
-
-
+using namespace robotAPI;
 
 // MARK: Hardware Init
 Controller controller(pros::Controller(pros::E_CONTROLLER_MASTER));
@@ -52,8 +51,8 @@ float all_rot_prev = {0};
 float allRotPrev = {0}; // The previous rotation of all the drivetrain wheels
 
 bool pressingPneumatics = false;
-array<robotAPI::DrivetrainMotor, 4> drivetrain = {robotAPI::DrivetrainMotor(topLeft, true), robotAPI::DrivetrainMotor(bottomLeft, true), robotAPI::DrivetrainMotor(topRight, false), robotAPI::DrivetrainMotor(bottomRight, false)};
-robotAPI::Robot robot = robotAPI::Robot(drivetrain, inertial);
+array<DrivetrainMotor, 4> drivetrain = {DrivetrainMotor(topLeft, true), DrivetrainMotor(bottomLeft, true), DrivetrainMotor(topRight, false), DrivetrainMotor(bottomRight, false)};
+Robot robot = Robot(drivetrain, inertial);
 vector<autonAPI::Point> autonPoints = {
 	{0, 0},
 	{0, 24},
@@ -144,7 +143,7 @@ void autonomous() {
 	autonAPI::Point prevPoint = robot.pos;
 	Vec2 curTargetLoc = {0, 0};
 	Vec2 prevTargetLoc = {0, 0};
-	float left_speed = 100, right_speed = 100;
+	float left_speed = 1000, right_speed = 1000;
 	wait(12000);
 	robot.moveWheels(left_speed, right_speed);
 	wait(1000);
@@ -161,21 +160,10 @@ void autonomous() {
 
 // MARK: Driving
 void drivePipeline() {
-	float left_speed = 0, right_speed = 0;
 	if (controller.getNewPress(Button::X)) {
-		drivingMode = (drivingMode == DrivingMode::SINGLE_JOYSTICK) ? DrivingMode::TANK : DrivingMode::SINGLE_JOYSTICK;
+		robot.driveMode = (drivingMode == DrivingMode::SINGLE_JOYSTICK) ? DrivingMode::TANK : DrivingMode::SINGLE_JOYSTICK;
 	}
-	if (drivingMode == DrivingMode::SINGLE_JOYSTICK) {
-		
-		// right_speed = (controller.leftAnalogY * cos(joystickRadians) * (driveSpeedMult / 100));
-		// left = analogX * abs(sin(atan2(analogX, analogY)));
-		// up = analogY * abs(cos(atan2(analogX, analogY)));
-		// left_speed = (up * reversed) - left;
-		// right_speed = (up * reversed) + left;
-	} else if (drivingMode == DrivingMode::TANK) {
-		
-	}
-	robot.moveWheels(left_speed, right_speed);
+	robot.setSpeedFromController(controller);
 }
 
 inline bool _otherBitsOn(const Button &curBtn, const uint16_t &mask) {
@@ -234,13 +222,18 @@ void opcontrol() {
 	// wait(3000);
 	// robot.brakeWheels();
 	while (true) {
-		if (robot.wheels.at(0).rawMotor.is_over_temp() || robot.wheels.at(1).rawMotor.is_over_temp() || robot.wheels.at(2).rawMotor.is_over_temp() || robot.wheels.at(3).rawMotor.is_over_temp()) break;
+		if (robot.drivetrain.wheels.at(0).rawMotor.is_over_temp() || robot.drivetrain.wheels.at(1).rawMotor.is_over_temp() || robot.drivetrain.wheels.at(2).rawMotor.is_over_temp() || robot.drivetrain.wheels.at(3).rawMotor.is_over_temp()) break;
 		controller.updateInputData();
-		robot.updateOdometry();
+		// robot.autonController.updateOdom();
 		drivePipeline();
 		scorePipeline();
 		wait(FRAME);
 	}
 	controller.rawController.rumble("---");
 	robot.brakeWheels();
+	conveyor.brake();
+	intake.brake();
+	bandRotatorBottom.brake();
+	bandRotatorTop.brake();
+	agitator.brake();
 }
