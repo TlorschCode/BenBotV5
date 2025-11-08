@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <array>
 #include <tuple>
+#include <vector>
 
 using namespace std;
 using namespace ctrlAPI;
@@ -43,9 +44,8 @@ float all_rot_prev = {0};
 float allRotPrev = {0}; // The previous rotation of all the drivetrain wheels
 
 bool pressingPneumatics = false;
-Robot robot;
 // MARK: Init robot
-void init_robot() {
+Robot init_robot() {
 	pros::Motor topLeft(1, pros::v5::MotorGearset::blue);
 	pros::Motor bottomLeft(2, pros::v5::MotorGearset::blue);
 	pros::Motor topRight(3, pros::v5::MotorGearset::blue);
@@ -54,18 +54,16 @@ void init_robot() {
 	topRight.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
 	bottomLeft.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
 	bottomRight.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	array<DrivetrainMotor, 4> drivetrain = {DrivetrainMotor(topLeft, true), DrivetrainMotor(bottomLeft, true), DrivetrainMotor(topRight, false), DrivetrainMotor(bottomRight, false)};
-	Robot robot = Robot(drivetrain, inertial);
+	array<DrivetrainMotor, 4> drivetrain = {DrivetrainMotor(1, true), DrivetrainMotor(2, true), DrivetrainMotor(3, false), DrivetrainMotor(4, false)};
+	return Robot(drivetrain, inertial);
 }
+Robot robot = init_robot();
 vector<autonAPI::Point> autonPoints = {
 	{0, 0},
 	{0, 24},
 	{12, 12}
 };
 DrivingMode drivingMode = DrivingMode::SINGLE_JOYSTICK;
-
-
-
 
 
 //| NON-DEFAULT FUNCTIONS |//
@@ -111,6 +109,7 @@ void checkPauseProgram() { /// REMOVE THIS FUNCTION FOR FINAL COMPETITION
 //| DEFAULT FUNCTIONS |//
 void initialize() {
 	configureMotors();
+	init_robot();
 	pros::lcd::initialize();
 	robot.inertial.reset();
 	wait(2300); // Wait for inertial to calibrate
@@ -173,12 +172,16 @@ void autonomous() {
 // MARK: Driving
 void drivePipeline() {
 	if (controller.getNewPress(Button::X)) {
-		robot.driveMode = (drivingMode == DrivingMode::SINGLE_JOYSTICK) ? DrivingMode::TANK : DrivingMode::SINGLE_JOYSTICK;
+		robot.swapDriveMode();
 	}
 	robot.setSpeedFromController(controller);
 }
 
-
+void brakeScoring(vector<pros::Motor*> scoringMotors) {
+	for (int i = 0; i < scoringMotors.size(); i++) {
+		scoringMotors.at(i)->brake();
+	}
+}
 
 // MARK: Scoring
 void scorePipeline() {
@@ -191,34 +194,28 @@ void scorePipeline() {
 	}
 	if (controller.getPressing(Button::R2) && !controller.otherL_or_RPressed(Button::R2)) {
 		conveyor.move_velocity(-200);
-		intake.brake();
-		bandRotatorBottom.brake();
-		bandRotatorTop.brake();
-		agitator.brake();
+		brakeScoring({&intake, &bandRotatorTop, &bandRotatorBottom, &agitator});
 	} else if (controller.getPressing(Button::R1) && !controller.otherL_or_RPressed(Button::R1)) {
 		conveyor.move_velocity(200);
 		bandRotatorTop.move_velocity(-275);
 		intake.move_velocity(200);
-		bandRotatorBottom.brake();
 		agitator.move_velocity(-200);
+		brakeScoring({&bandRotatorBottom});
 	} else if (controller.getPressing(Button::L1) && !controller.otherL_or_RPressed(Button::L1)) {
 		conveyor.move_velocity(200);
 		bandRotatorTop.move_velocity(275);
 		bandRotatorBottom.move_velocity(200);
-		intake.brake();
 		agitator.move_velocity(-200);
+		brakeScoring({&intake});
 	} else if (controller.getPressing(Button::L2) && !controller.otherL_or_RPressed(Button::L2)) {
 		conveyor.move_velocity(-200);
 		intake.move_velocity(-200);
 		bandRotatorBottom.brake();
 		bandRotatorTop.brake();
 		agitator.brake();
+		brakeScoring({&agitator, &bandRotatorTop, &bandRotatorBottom});
 	} else {
-		conveyor.brake();
-		bandRotatorTop.brake();
-		intake.brake();
-		bandRotatorBottom.brake();
-		agitator.brake();
+		brakeScoring({&conveyor, &intake, &bandRotatorTop, &bandRotatorBottom, &agitator});
 	}
 }
 
@@ -230,15 +227,27 @@ void opcontrol() {
 	// robot.moveWheels(driveSpeedMult, driveSpeedMult);
 	// wait(3000);
 	// robot.brakeWheels();
-	while (true) {
-		if (robot.drivetrain.topLeft.rawMotor.is_over_temp() || robot.drivetrain.topRight.rawMotor.is_over_temp() || robot.drivetrain.bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.bottomRight.rawMotor.is_over_temp()) controller.rawController.rumble("---");
-		controller.updateInputData();
-		// robot.autonController.updateOdom();
-		drivePipeline();
-		scorePipeline();
+	initialize();
+	printOnScreen(to_string(robot.pos.y));
+	wait(2500);
+	while (robot.pos.y < 24) {
+		// if (robot.drivetrain.topLeft.rawMotor.is_over_temp() || robot.drivetrain.topRight.rawMotor.is_over_temp() || robot.drivetrain.bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.bottomRight.rawMotor.is_over_temp()) controller.rawController.rumble("---");
+		// controller.updateInputData();
+		robot.autonController->updateOdom();
+		robot.moveWheels(100, 100);
+		// drivePipeline();
+		// scorePipeline();
 		wait(FRAME);
 	}
-	controller.rawController.rumble("---");
+	// while (true) {
+	// 	if (robot.drivetrain.topLeft.rawMotor.is_over_temp() || robot.drivetrain.topRight.rawMotor.is_over_temp() || robot.drivetrain.bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.bottomRight.rawMotor.is_over_temp()) controller.rawController.rumble("---");
+	// 	controller.updateInputData();
+	// 	// robot.autonController->updateOdom();
+	// 	drivePipeline();
+	// 	scorePipeline();
+	// 	wait(FRAME);
+	// }
+	printOnScreen(to_string(robot.pos.y));
 	robot.brakeWheels();
 	conveyor.brake();
 	intake.brake();

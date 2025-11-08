@@ -46,17 +46,18 @@ Vec2 PID_Controller::getPurePursuitLoc(float &checkRadius, Vec2 &target, Vec2 &p
     float twoceCircleOffset = 2 * (((prevTarget.x - dereffedRobot.pos.x) * (target.x - prevTarget.x)) + ((prevTarget.y - dereffedRobot.pos.y) * (target.y - prevTarget.y)));
     float prevTarCurPosDist = (std::pow(prevTarget.x - dereffedRobot.pos.x, 2) + std::pow(prevTarget.y - dereffedRobot.pos.y, 2)) - std::pow(checkRadius, 2);
     float discriminant = std::pow(twoceCircleOffset, 2) - (4 * dotProduct * prevTarCurPosDist);
-    float intersectRatio1 = (-twoceCircleOffset + sqrt(discriminant)) / (2 * dotProduct);
-    float intersectRatio2 = (-twoceCircleOffset - sqrt(discriminant)) / (2 * dotProduct);
+    
 
-    Vec2 intercept1 = {prevTarget.x + (target.x - prevTarget.x) * intersectRatio1, prevTarget.y + (target.y - prevTarget.y) * intersectRatio1};
-    Vec2 intercept2 = {prevTarget.x + (target.x - prevTarget.x) * intersectRatio2, prevTarget.y + (target.y - prevTarget.y) * intersectRatio2};
+    if (discriminant >= 0) {
+        const float intersectRatio1 = (-twoceCircleOffset + sqrt(discriminant)) / (2 * dotProduct);
+        const float intersectRatio2 = (-twoceCircleOffset - sqrt(discriminant)) / (2 * dotProduct);
 
-    bool within_x = (minTarget.x <= intercept1.x && intercept1.x <= maxTarget.x) || (minTarget.x <= intercept2.x && intercept2.x <= maxTarget.x);
-    bool within_y = (minTarget.y <= intercept1.y && intercept1.y <= maxTarget.y) || (minTarget.y <= intercept2.y && intercept2.y <= maxTarget.y);
+        const Vec2 intercept1 = {prevTarget.x + (target.x - prevTarget.x) * intersectRatio1, prevTarget.y + (target.y - prevTarget.y) * intersectRatio1};
+        const Vec2 intercept2 = {prevTarget.x + (target.x - prevTarget.x) * intersectRatio2, prevTarget.y + (target.y - prevTarget.y) * intersectRatio2};
 
-    if (discriminant >= 0 && within_x && within_y) {
-        if (std::abs(intercept2.x - target.x) + std::abs(intercept2.y - target.y) <
+        const bool within_x = (minTarget.x <= intercept1.x && intercept1.x <= maxTarget.x) || (minTarget.x <= intercept2.x && intercept2.x <= maxTarget.x);
+        const bool within_y = (minTarget.y <= intercept1.y && intercept1.y <= maxTarget.y) || (minTarget.y <= intercept2.y && intercept2.y <= maxTarget.y);
+        if (within_x && within_y && std::abs(intercept2.x - target.x) + std::abs(intercept2.y - target.y) <
             std::abs(intercept1.x - target.x) + std::abs(intercept1.y - target.y)) {
             return intercept2;
         } else {
@@ -66,8 +67,7 @@ Vec2 PID_Controller::getPurePursuitLoc(float &checkRadius, Vec2 &target, Vec2 &p
     return target; // Fallback
 }
 
-void PID_Controller::updateOdom(robotAPI::Robot *robot) {
-    float allRotPrev = 0;
+void PID_Controller::updateOdom() {
     robotAPI::Robot &dereffedRobot = *robot;
     uint32_t now = pros::millis();
 
@@ -79,12 +79,12 @@ void PID_Controller::updateOdom(robotAPI::Robot *robot) {
                             dereffedRobot.drivetrain.bottomRight.rawMotor.get_raw_position(&now)) / 2;
 
     float averageWheelRot = (leftMotorsPos + rightMotorsPos) / 2;
-    float wheelRotDelta = averageWheelRot - allRotPrev;
+    float wheelRotDelta = averageWheelRot - prev_allWheelRot;
 
     dereffedRobot.pos.x += ((wheelRotDelta / 360) * GEAR_RATIO * WHEEL_CIRCUMFERENCE) * sin(dereffedRobot.heading.getRadians());
     dereffedRobot.pos.y += ((wheelRotDelta / 360) * GEAR_RATIO * WHEEL_CIRCUMFERENCE) * cos(dereffedRobot.heading.getRadians());
 
-    allRotPrev = averageWheelRot;
+    prev_allWheelRot = averageWheelRot;
 }
 
 } // namespace autonAPI

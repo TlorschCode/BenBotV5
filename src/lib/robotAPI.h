@@ -2,6 +2,7 @@
 #include "globalAPI.h"
 #include "controllerAPI.h"
 #include <array>
+#include <memory>
 
 namespace autonAPI {
 	class PID_Controller;
@@ -16,18 +17,23 @@ class Robot;
 // MARK: DrivetrainMotor
 class DrivetrainMotor {
 private:
-	int RPM;
 public:
 	pros::Motor rawMotor;
 	bool isLeftSide;
+	int RPM;
 
 	DrivetrainMotor();
-	DrivetrainMotor(pros::Motor &_motor, bool _isLeftSide);
+	DrivetrainMotor(int port, bool _isLeftSide);
 
 	void setVelocityPercent(float vel);
 	void brake();
 	void setDirection(bool reversed);
 	double getActualVelocity();
+	constexpr inline DrivetrainMotor& operator=(const DrivetrainMotor& _new) {
+		RPM = _new.RPM;
+		isLeftSide = _new.isLeftSide;
+		return *this;
+	}
 };
 
 // MARK: Drivetrain
@@ -39,7 +45,14 @@ struct Drivetrain {
 	Drivetrain();
 	Drivetrain(std::array<DrivetrainMotor, 4> _wheels);
 	Drivetrain(DrivetrainMotor _topLeft, DrivetrainMotor _topRight, DrivetrainMotor _bottomLeft, DrivetrainMotor _bottomRight);
-	inline std::array<DrivetrainMotor, 4> getAll() const { return {topLeft, topRight, bottomLeft, bottomRight}; };
+	inline std::array<DrivetrainMotor*, 4> getAll_asPtr() noexcept { return {&topLeft, &topRight, &bottomLeft, &bottomRight}; };
+	constexpr inline Drivetrain& operator=(const Drivetrain& _new) noexcept {
+		topLeft = _new.topLeft;
+		topRight = _new.topRight;
+		bottomLeft = _new.bottomLeft;
+		bottomRight = _new.bottomRight;
+		return *this;
+	}
 };
 
 // MARK: Heading
@@ -67,15 +80,21 @@ public:
 	Heading heading = {};
 	Drivetrain drivetrain;
 	pros::Imu inertial;
-	autonAPI::PID_Controller *autonController;
+	std::unique_ptr<autonAPI::PID_Controller> autonController;
 	DrivingMode driveMode = DrivingMode::TANK;
 
-	Robot();
 	Robot(std::array<DrivetrainMotor, 4> _wheels, pros::Imu _inertial);
 
-	void moveWheels(float &speedLeftPercent, float &speedRightPercent);
+	void moveWheels(float speedLeftPercent, float speedRightPercent);
 	void brakeWheels();
 	void setSpeedFromController(ctrlAPI::Controller &controller);
+	void swapDriveMode();
+	constexpr inline Robot& operator=(const Robot& _new) noexcept {
+		pos = _new.pos;
+		heading = _new.heading;
+		drivetrain = _new.drivetrain;
+		return *this;
+	}
 };
 
 } // namespace robotAPI

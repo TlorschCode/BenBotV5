@@ -30,6 +30,7 @@ namespace autonAPI {
         W_float dRot = {0, 0.85f};
         float prev_pRot = 0;
         float prev_rot = 0;
+        float prev_allWheelRot = 0;
 
     public:
         float leftSpeed = 0;
@@ -38,7 +39,8 @@ namespace autonAPI {
         PID_Controller() = default;
 
         void updatePID(Vec2& _target);
-        void updateOdom(robotAPI::Robot* robot);
+        void updateOdom();
         Vec2 getPurePursuitLoc(float& checkRadius, Vec2& target, Vec2& prevTarget);
+        inline void bindRobot(robotAPI::Robot* r) { robot = r; }
     };
 }

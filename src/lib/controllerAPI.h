@@ -108,7 +108,7 @@ constexpr inline bool operator!(Button b) noexcept {
 
 class Controller {
     private:
-        static constexpr uint16_t L_R_btnMask = btn_to_bool(Button::R2 | Button::R1 | Button::L2 | Button::L1);
+        static constexpr uint16_t L_R_btnMask = btn_to_u16(Button::R2 | Button::R1 | Button::L2 | Button::L1);
         static constexpr pros::controller_analog_e_t ControllerAnalogLeftX = pros::E_CONTROLLER_ANALOG_LEFT_X;
         static constexpr pros::controller_analog_e_t ControllerAnalogLeftY = pros::E_CONTROLLER_ANALOG_LEFT_Y;
         static constexpr pros::controller_analog_e_t ControllerAnalogRightX = pros::E_CONTROLLER_ANALOG_RIGHT_X;
@@ -165,10 +165,10 @@ class Controller {
             | (Button::R2 * rawController.get_digital_new_press(ControllerDigitalR2))
             | (Button::L1 * rawController.get_digital_new_press(ControllerDigitalL1))
             | (Button::L2 * rawController.get_digital_new_press(ControllerDigitalL2)));
-            rightAnalogXPercent = (rawController.get_analog(ControllerAnalogRightX) / 127) * 100; // 127 is max value from get_analog, turn to percent
-            rightAnalogYPercent = (rawController.get_analog(ControllerAnalogRightY) / 127) * 100;
-            leftAnalogXPercent = (rawController.get_analog(ControllerAnalogLeftX) / 127) * 100;
-            leftAnalogYPercent = (rawController.get_analog(ControllerAnalogLeftY) / 127) * 100;
+            rightAnalogXPercent = (rawController.get_analog(ControllerAnalogRightX) / 127.0f) * 100.0f; // 127 is max value from get_analog, turn to percent
+            rightAnalogYPercent = (rawController.get_analog(ControllerAnalogRightY) / 127.0f) * 100.0f;
+            leftAnalogXPercent = (rawController.get_analog(ControllerAnalogLeftX) / 127.0f) * 100.0f;
+            leftAnalogYPercent = (rawController.get_analog(ControllerAnalogLeftY) / 127.0f) * 100.0f;
         }
         inline bool getPressing(Button btn) const {
             return btn_to_bool(buttons & btn);
