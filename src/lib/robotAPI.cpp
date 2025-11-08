@@ -39,10 +39,13 @@ double DrivetrainMotor::getActualVelocity() {
 
 // MARK: Drivetrain
 Drivetrain::Drivetrain()
-	: wheels({DrivetrainMotor(), DrivetrainMotor(), DrivetrainMotor(), DrivetrainMotor()}) {}
+	: topLeft(DrivetrainMotor()), topRight(DrivetrainMotor()), bottomLeft(DrivetrainMotor()), bottomRight(DrivetrainMotor()) {}
 
 Drivetrain::Drivetrain(std::array<DrivetrainMotor, 4> _wheels)
-	: wheels(_wheels) {}
+	: topLeft(_wheels.at(0)), topRight(_wheels.at(1)), bottomLeft(_wheels.at(2)), bottomRight(_wheels.at(3)) {}
+
+Drivetrain::Drivetrain(DrivetrainMotor _topLeft, DrivetrainMotor _topRight, DrivetrainMotor _bottomLeft, DrivetrainMotor _bottomRight)
+	: topLeft(_topLeft), topRight(_topRight), bottomLeft(_bottomLeft), bottomRight(_bottomRight) {};
 
 // MARK: Heading
 float Heading::getDegrees() const { return degrees; }
@@ -62,18 +65,16 @@ Robot::Robot(std::array<DrivetrainMotor, 4> _wheels, pros::Imu _inertial)
 	  autonController(new autonAPI::PID_Controller()) {}
 
 void Robot::moveWheels(float &speedLeftPercent, float &speedRightPercent) {
-	for (auto &wheel : drivetrain.wheels)
-		wheel.setVelocityPercent(wheel.isLeftSide ? speedLeftPercent : speedRightPercent);
+	drivetrain.topLeft.setVelocityPercent(speedLeftPercent);
+	drivetrain.topRight.setVelocityPercent(speedRightPercent);
+	drivetrain.bottomLeft.setVelocityPercent(speedLeftPercent);
+	drivetrain.bottomRight.setVelocityPercent(speedRightPercent);
 }
 
 void Robot::brakeWheels() {
-	for (auto &wheel : drivetrain.wheels)
+	for (auto &wheel : drivetrain.getAll()) {
 		wheel.brake();
-}
-
-void Robot::moveDrivetrain(float leftSpeedPercent, float rightSpeedPercent) {
-	for (auto &wheel : drivetrain.wheels)
-		wheel.setVelocityPercent(wheel.isLeftSide ? leftSpeedPercent : rightSpeedPercent);
+	}
 }
 
 void Robot::setSpeedFromController(ctrlAPI::Controller &controller) {
@@ -91,5 +92,5 @@ void Robot::setSpeedFromController(ctrlAPI::Controller &controller) {
 		rightSpeedPercent = controller.rightAnalogYPercent;
 	}
 
-	moveDrivetrain(leftSpeedPercent, rightSpeedPercent);
+	moveWheels(leftSpeedPercent, rightSpeedPercent);
 }

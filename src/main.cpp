@@ -14,10 +14,7 @@ using namespace robotAPI;
 
 // MARK: Hardware Init
 Controller controller(pros::Controller(pros::E_CONTROLLER_MASTER));
-pros::Motor topLeft(1, pros::v5::MotorGearset::blue);
-pros::Motor bottomLeft(2, pros::v5::MotorGearset::blue);
-pros::Motor topRight(3, pros::v5::MotorGearset::blue);
-pros::Motor bottomRight(4, pros::v5::MotorGearset::blue);
+
 pros::Motor conveyor(5, pros::v5::MotorGearset::green);
 pros::Motor bandRotatorTop(6, pros::v5::MotorGearset::blue);
 pros::Motor bandRotatorBottom(7, pros::v5::MotorGearset::green);
@@ -26,10 +23,7 @@ pros::Motor agitator(19, pros::v5::MotorGearset::green);
 void configureMotors() {
     conveyor.set_reversed(true);
 	intake.set_reversed(true);
-	topLeft.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	topRight.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	bottomLeft.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	bottomRight.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	
 	conveyor.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
 	bandRotatorTop.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
 	bandRotatorBottom.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
@@ -49,8 +43,20 @@ float all_rot_prev = {0};
 float allRotPrev = {0}; // The previous rotation of all the drivetrain wheels
 
 bool pressingPneumatics = false;
-array<DrivetrainMotor, 4> drivetrain = {DrivetrainMotor(topLeft, true), DrivetrainMotor(bottomLeft, true), DrivetrainMotor(topRight, false), DrivetrainMotor(bottomRight, false)};
-Robot robot = Robot(drivetrain, inertial);
+Robot robot;
+// MARK: Init robot
+void init_robot() {
+	pros::Motor topLeft(1, pros::v5::MotorGearset::blue);
+	pros::Motor bottomLeft(2, pros::v5::MotorGearset::blue);
+	pros::Motor topRight(3, pros::v5::MotorGearset::blue);
+	pros::Motor bottomRight(4, pros::v5::MotorGearset::blue);
+	topLeft.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	topRight.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	bottomLeft.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	bottomRight.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	array<DrivetrainMotor, 4> drivetrain = {DrivetrainMotor(topLeft, true), DrivetrainMotor(bottomLeft, true), DrivetrainMotor(topRight, false), DrivetrainMotor(bottomRight, false)};
+	Robot robot = Robot(drivetrain, inertial);
+}
 vector<autonAPI::Point> autonPoints = {
 	{0, 0},
 	{0, 24},
@@ -78,6 +84,14 @@ void clear_screen() {
 	pros::lcd::clear_line(6);
 }
 
+inline bool _otherButtonsOn(const Button &curBtn, const uint16_t &mask) {
+	return btn_to_bool(mask & ~curBtn);
+}
+
+inline bool _otherBitsOn(const uint32_t &itm, const uint32_t &mask) {
+	return mask & ~itm;
+}
+
 
 
 
@@ -98,7 +112,7 @@ void checkPauseProgram() { /// REMOVE THIS FUNCTION FOR FINAL COMPETITION
 void initialize() {
 	configureMotors();
 	pros::lcd::initialize();
-	inertial.reset();
+	robot.inertial.reset();
 	wait(2300); // Wait for inertial to calibrate
 }
 
@@ -164,9 +178,7 @@ void drivePipeline() {
 	robot.setSpeedFromController(controller);
 }
 
-inline bool _otherBitsOn(const Button &curBtn, const uint16_t &mask) {
-	return btn_to_bool(mask & ~curBtn);
-}
+
 
 // MARK: Scoring
 void scorePipeline() {
@@ -214,13 +226,12 @@ void scorePipeline() {
 // MARK: opcontrol
 void opcontrol() {
 	// autonomous();
-	// 72 inches across the field
 	clear_screen();
 	// robot.moveWheels(driveSpeedMult, driveSpeedMult);
 	// wait(3000);
 	// robot.brakeWheels();
 	while (true) {
-		if (robot.drivetrain.wheels.at(0).rawMotor.is_over_temp() || robot.drivetrain.wheels.at(1).rawMotor.is_over_temp() || robot.drivetrain.wheels.at(2).rawMotor.is_over_temp() || robot.drivetrain.wheels.at(3).rawMotor.is_over_temp()) break;
+		if (robot.drivetrain.topLeft.rawMotor.is_over_temp() || robot.drivetrain.topRight.rawMotor.is_over_temp() || robot.drivetrain.bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.bottomRight.rawMotor.is_over_temp()) controller.rawController.rumble("---");
 		controller.updateInputData();
 		// robot.autonController.updateOdom();
 		drivePipeline();
