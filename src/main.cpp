@@ -1,5 +1,3 @@
-// MARK: FIXME
-// FIXME: Incorporate driveAPI, decouple functionality more effectively.
 #include "lib/mainAPI.h"
 #include <fstream>
 #include <string>
