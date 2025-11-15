@@ -16,9 +16,9 @@ using namespace robotAPI;
 // MARK: Hardware Init
 Controller controller(pros::Controller(pros::E_CONTROLLER_MASTER));
 
-pros::Motor conveyor(5, pros::v5::MotorGearset::green);
-pros::Motor bandRotatorTop(6, pros::v5::MotorGearset::blue);
-pros::Motor bandRotatorBottom(7, pros::v5::MotorGearset::green);
+pros::Motor conveyor(7, pros::v5::MotorGearset::green);
+pros::Motor bandRotatorTop(8, pros::v5::MotorGearset::blue);
+pros::Motor bandRotatorBottom(9, pros::v5::MotorGearset::green);
 pros::Motor intake(20, pros::v5::MotorGearset::green);
 pros::Motor agitator(19, pros::v5::MotorGearset::green);
 void configureMotors() {
@@ -48,15 +48,24 @@ bool pressingPneumatics = false;
 Robot init_robot() {
 	pros::Motor topLeft(1, pros::v5::MotorGearset::blue);
 	pros::Motor bottomLeft(2, pros::v5::MotorGearset::blue);
+	pros::Motor middleLeft(2, pros::v5::MotorGearset::blue);
+	pros::Motor middleRight(2, pros::v5::MotorGearset::blue);
 	pros::Motor topRight(3, pros::v5::MotorGearset::blue);
 	pros::Motor bottomRight(4, pros::v5::MotorGearset::blue);
 	topLeft.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
 	topRight.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
 	bottomLeft.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
 	bottomRight.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	array<DrivetrainMotor, 4> drivetrain = {DrivetrainMotor(1, true), DrivetrainMotor(2, true), DrivetrainMotor(3, false), DrivetrainMotor(4, false)};
+	array<DrivetrainMotor, 6> drivetrain = {
+		DrivetrainMotor(topLeft, true),
+		DrivetrainMotor(topRight, false),
+		DrivetrainMotor(middleLeft, true),
+		DrivetrainMotor(middleRight, false),
+		DrivetrainMotor(bottomLeft, true),
+		DrivetrainMotor(bottomRight, false)};
 	return Robot(drivetrain, inertial);
 }
+
 Robot robot = init_robot();
 vector<autonAPI::Point> autonPoints = {
 	{0, 0},
@@ -230,23 +239,31 @@ void opcontrol() {
 	initialize();
 	printOnScreen(to_string(robot.pos.y));
 	wait(2500);
-	while (robot.pos.y < 24) {
-		// if (robot.drivetrain.topLeft.rawMotor.is_over_temp() || robot.drivetrain.topRight.rawMotor.is_over_temp() || robot.drivetrain.bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.bottomRight.rawMotor.is_over_temp()) controller.rawController.rumble("---");
-		// controller.updateInputData();
-		robot.autonController->updateOdom();
-		robot.moveWheels(100, 100);
-		// drivePipeline();
-		// scorePipeline();
-		wait(FRAME);
-	}
-	// while (true) {
-	// 	if (robot.drivetrain.topLeft.rawMotor.is_over_temp() || robot.drivetrain.topRight.rawMotor.is_over_temp() || robot.drivetrain.bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.bottomRight.rawMotor.is_over_temp()) controller.rawController.rumble("---");
-	// 	controller.updateInputData();
-	// 	// robot.autonController->updateOdom();
-	// 	drivePipeline();
-	// 	scorePipeline();
+	// while (robot.pos.y < 24) {
+	// 	// if (robot.drivetrain.topLeft.rawMotor.is_over_temp() || robot.drivetrain.topRight.rawMotor.is_over_temp() || robot.drivetrain.bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.bottomRight.rawMotor.is_over_temp()) controller.rawController.rumble("---");
+	// 	// controller.updateInputData();
+	// 	robot.autonController->updateOdom();
+	// 	robot.moveWheels(100, 100);
+	// 	// drivePipeline();
+	// 	// scorePipeline();
 	// 	wait(FRAME);
 	// }
+	while (true) {
+		if (robot.drivetrain.topLeft.rawMotor.is_over_temp() || robot.drivetrain.topRight.rawMotor.is_over_temp() || robot.drivetrain.bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.bottomRight.rawMotor.is_over_temp()) break;
+		controller.updateInputData();
+		// robot.autonController->updateOdom();
+		drivePipeline();
+		scorePipeline();
+		wait(FRAME);
+	}
+	controller.rawController.rumble("...");
+	while (true) {
+		controller.updateInputData();
+		// robot.autonController->updateOdom();
+		drivePipeline();
+		scorePipeline();
+		wait(FRAME);
+	}
 	printOnScreen(to_string(robot.pos.y));
 	robot.brakeWheels();
 	conveyor.brake();

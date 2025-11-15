@@ -9,8 +9,8 @@ using namespace robotAPI;
 DrivetrainMotor::DrivetrainMotor()
 	: rawMotor(pros::Motor(1, pros::v5::MotorGearset::green)), isLeftSide(false), RPM(0) {}
 
-DrivetrainMotor::DrivetrainMotor(int port, bool _isLeftSide)
-	: rawMotor(pros::Motor(port, pros::v5::MotorGearset::green)), isLeftSide(_isLeftSide) {
+DrivetrainMotor::DrivetrainMotor(int port, bool _isLeftSide, pros::v5::MotorGearset gearset)
+	: rawMotor(pros::Motor(port, gearset)), isLeftSide(_isLeftSide) {
 	if (isLeftSide) rawMotor.set_reversed(true);
 
 	switch (rawMotor.get_gearing()) {
@@ -20,6 +20,16 @@ DrivetrainMotor::DrivetrainMotor(int port, bool _isLeftSide)
 		default: RPM = 0; break;
 	}
 }
+DrivetrainMotor::DrivetrainMotor(pros::Motor _motor, bool _isLeftSide)
+	: rawMotor(_motor), isLeftSide(_isLeftSide) {
+	switch (rawMotor.get_gearing()) {
+		case pros::v5::MotorGears::red:   RPM = 100; break;
+		case pros::v5::MotorGears::green: RPM = 200; break;
+		case pros::v5::MotorGears::blue:  RPM = 600; break;
+		default: RPM = 0; break;
+	}
+}
+
 
 void DrivetrainMotor::setVelocityPercent(float vel) {
 	rawMotor.move_velocity((vel / 100.0f) * RPM);
@@ -41,11 +51,15 @@ double DrivetrainMotor::getActualVelocity() {
 Drivetrain::Drivetrain()
 	: topLeft(DrivetrainMotor()), topRight(DrivetrainMotor()), bottomLeft(DrivetrainMotor()), bottomRight(DrivetrainMotor()) {}
 
-Drivetrain::Drivetrain(std::array<DrivetrainMotor, 4> _wheels)
-	: topLeft(_wheels.at(0)), topRight(_wheels.at(1)), bottomLeft(_wheels.at(2)), bottomRight(_wheels.at(3)) {}
+Drivetrain::Drivetrain(std::array<DrivetrainMotor, 6> _wheels)
+	: topLeft(_wheels.at(0)), topRight(_wheels.at(1)), middleLeft(_wheels.at(2)), middleRight(_wheels.at(3)), bottomLeft(_wheels.at(4)), bottomRight(_wheels.at(5)) {}
 
-Drivetrain::Drivetrain(DrivetrainMotor _topLeft, DrivetrainMotor _topRight, DrivetrainMotor _bottomLeft, DrivetrainMotor _bottomRight)
-	: topLeft(_topLeft), topRight(_topRight), bottomLeft(_bottomLeft), bottomRight(_bottomRight) {};
+Drivetrain::Drivetrain(DrivetrainMotor _topLeft, DrivetrainMotor _topRight, DrivetrainMotor _middleLeft, DrivetrainMotor _middleRight, DrivetrainMotor _bottomLeft, DrivetrainMotor _bottomRight)
+	: topLeft(_topLeft), topRight(_topRight), middleLeft(_middleLeft), middleRight(_middleRight), bottomLeft(_bottomLeft), bottomRight(_bottomRight) {};
+
+Drivetrain::Drivetrain(std::array<pros::Motor, 6> _drivetrain, pros::motor_gearset_e _gearset)
+	: topLeft(_drivetrain.at(0), true), topRight(_drivetrain.at(1), false), middleLeft(_drivetrain.at(2), true), 
+	  middleRight(_drivetrain.at(3), false), bottomLeft(_drivetrain.at(4), true), bottomRight(_drivetrain.at(5), false) {}
 
 // MARK: Heading
 float Heading::getDegrees() const { return degrees; }
@@ -54,7 +68,7 @@ void Heading::setDegrees(float amount) { degrees = amount; }
 void Heading::setRadians(double amount) { degrees = toDegrees(amount); }
 
 // MARK: Robot
-Robot::Robot(std::array<DrivetrainMotor, 4> _wheels, pros::Imu _inertial)
+Robot::Robot(std::array<DrivetrainMotor, 6> _wheels, pros::Imu _inertial)
 	: drivetrain(_wheels),
 	  inertial(_inertial),
 	  autonController(std::make_unique<autonAPI::PID_Controller>()) {
@@ -64,6 +78,10 @@ Robot::Robot(std::array<DrivetrainMotor, 4> _wheels, pros::Imu _inertial)
 void Robot::moveWheels(float speedLeftPercent, float speedRightPercent) {
 	drivetrain.topLeft.setVelocityPercent(speedLeftPercent);
 	drivetrain.topRight.setVelocityPercent(speedRightPercent);
+
+	drivetrain.middleLeft.setVelocityPercent(speedLeftPercent);
+	drivetrain.middleRight.setVelocityPercent(speedRightPercent);
+
 	drivetrain.bottomLeft.setVelocityPercent(speedLeftPercent);
 	drivetrain.bottomRight.setVelocityPercent(speedRightPercent);
 }
@@ -76,19 +94,13 @@ void Robot::brakeWheels() {
 
 void Robot::setSpeedFromController(ctrlAPI::Controller &controller) {
 	float leftSpeedPercent, rightSpeedPercent;
-
 	if (driveMode == DrivingMode::SINGLE_JOYSTICK) {
-		const float joystickRadians = atan2(controller.leftAnalogYPercent / 100.0f,
-											controller.leftAnalogXPercent / 100.0f);
-		const float alteredAnalogY = controller.leftAnalogYPercent * fabs(cos(joystickRadians));
-		const float alteredAnalogX = controller.leftAnalogXPercent * fabs(sin(joystickRadians));
-		leftSpeedPercent = alteredAnalogY + alteredAnalogX;
-		rightSpeedPercent = alteredAnalogY - alteredAnalogX;
+		leftSpeedPercent = controller.leftAnalogYPercent + controller.leftAnalogXPercent;
+		rightSpeedPercent = controller.leftAnalogYPercent - controller.leftAnalogXPercent;
 	} else {
 		leftSpeedPercent = controller.leftAnalogYPercent;
 		rightSpeedPercent = controller.rightAnalogYPercent;
 	}
-
 	moveWheels(leftSpeedPercent, rightSpeedPercent);
 }
 
