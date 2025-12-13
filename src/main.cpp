@@ -46,23 +46,20 @@ float allRotPrev = {0}; // The previous rotation of all the drivetrain wheels
 bool pressingPneumatics = false;
 // MARK: Init robot
 Robot init_robot() {
-	pros::Motor topLeft(1, pros::v5::MotorGearset::blue);
-	pros::Motor bottomLeft(2, pros::v5::MotorGearset::blue);
-	pros::Motor middleLeft(2, pros::v5::MotorGearset::blue);
-	pros::Motor middleRight(2, pros::v5::MotorGearset::blue);
-	pros::Motor topRight(3, pros::v5::MotorGearset::blue);
-	pros::Motor bottomRight(4, pros::v5::MotorGearset::blue);
-	topLeft.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	topRight.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	bottomLeft.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
-	bottomRight.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
+	DrivetrainMotor topLeft(1, true, pros::v5::MotorGearset::blue);    // Reverse
+	DrivetrainMotor middleLeft(2, true, pros::v5::MotorGearset::blue); // Reverse
+	DrivetrainMotor bottomLeft(3, false, pros::v5::MotorGearset::blue); // Normal
+	DrivetrainMotor topRight(4, true, pros::v5::MotorGearset::blue);   // Reverse
+	DrivetrainMotor middleRight(5, true, pros::v5::MotorGearset::blue);// Reverse
+	DrivetrainMotor bottomRight(6, false, pros::v5::MotorGearset::blue);// Normal
 	array<DrivetrainMotor, 6> drivetrain = {
-		DrivetrainMotor(topLeft, true),
-		DrivetrainMotor(topRight, false),
-		DrivetrainMotor(middleLeft, true),
-		DrivetrainMotor(middleRight, false),
-		DrivetrainMotor(bottomLeft, true),
-		DrivetrainMotor(bottomRight, false)};
+		topLeft,
+		middleLeft,
+		bottomLeft,
+		topRight,
+		middleRight,
+		bottomRight
+	};
 	return Robot(drivetrain, inertial);
 }
 
@@ -238,7 +235,7 @@ void opcontrol() {
 	// robot.brakeWheels();
 	initialize();
 	printOnScreen(to_string(robot.pos.y));
-	wait(2500);
+	// wait(2500);
 	// while (robot.pos.y < 24) {
 	// 	// if (robot.drivetrain.topLeft.rawMotor.is_over_temp() || robot.drivetrain.topRight.rawMotor.is_over_temp() || robot.drivetrain.bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.bottomRight.rawMotor.is_over_temp()) controller.rawController.rumble("---");
 	// 	// controller.updateInputData();

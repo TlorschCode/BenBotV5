@@ -170,13 +170,13 @@ class Controller {
             leftAnalogXPercent = (rawController.get_analog(ControllerAnalogLeftX) / 127.0f) * 100.0f;
             leftAnalogYPercent = (rawController.get_analog(ControllerAnalogLeftY) / 127.0f) * 100.0f;
         }
-        inline bool getPressing(Button btn) const {
+        constexpr inline bool getPressing(Button btn) const {
             return btn_to_bool(buttons & btn);
         }
-        inline bool getNewPress(Button btn) const {
+        constexpr inline bool getNewPress(Button btn) const {
             return btn_to_bool(buttonsNewPress & btn);
         }
-        inline bool otherL_or_RPressed(Button btn) const {
+        constexpr inline bool otherL_or_RPressed(Button btn) const {
             return btn_to_bool((buttons & L_R_btnMask) & btn);
         }
 };
