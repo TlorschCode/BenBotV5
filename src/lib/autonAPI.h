@@ -3,20 +3,20 @@
 
 namespace robotAPI { class Robot; }
 
+struct Point {
+    Vec2 pos = {0, 0};
+    bool visited = false;
+
+    Point(float _x, float _y) : pos{_x, _y} {}
+    Point(const Vec2& v) : pos(v) {}
+
+    inline Point& operator=(const Vec2& other) {
+        pos = other;
+        return *this;
+    }
+};
+
 namespace autonAPI {
-    struct Point {
-        Vec2 pos = {0, 0};
-        bool visited = false;
-
-        Point(float _x, float _y) : pos{_x, _y} {}
-        Point(const Vec2& v) : pos(v) {}
-
-        inline Point& operator=(const Vec2& other) {
-            pos = other;
-            return *this;
-        }
-    };
-
     class PID_Controller {
     private:
         robotAPI::Robot* robot = nullptr;
@@ -39,8 +39,8 @@ namespace autonAPI {
         PID_Controller() = default;
 
         void updatePID(Vec2& _target);
-        void updateOdom();
-        Vec2 getPurePursuitLoc(float& checkRadius, Vec2& target, Vec2& prevTarget);
+        float updateOdom();
+        Vec2 getPurePursuitLoc(const float& checkRadius, const Vec2& target, const Vec2& prevTarget);
         inline void bindRobot(robotAPI::Robot* r) { robot = r; }
     };
 }

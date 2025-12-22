@@ -5,8 +5,9 @@
 
 constexpr double PI = 3.14159265358979323846;
 constexpr float GEAR_RATIO = {0.75f}; // Wheel-motor gear ratio
-constexpr float WHEEL_CIRCUMFERENCE = {12.56f}; //  inches
+constexpr float WHEEL_CIRCUMFERENCE = {8.639379}; //  inches
 constexpr float FRAME = {10}; // Frame time
+
 
 // MARK: Predec
 struct Vec2;

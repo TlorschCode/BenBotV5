@@ -11,6 +11,7 @@ DrivetrainMotor::DrivetrainMotor()
 
 DrivetrainMotor::DrivetrainMotor(int port, bool _reversed, pros::v5::MotorGearset gearset)
 	: rawMotor(pros::Motor(port, gearset)), reversed(_reversed) {
+	rawMotor.set_reversed(_reversed);
 	switch (rawMotor.get_gearing()) {
 		case pros::v5::MotorGears::red:   RPM = 100; break;
 		case pros::v5::MotorGears::green: RPM = 200; break;
@@ -93,11 +94,11 @@ void Robot::brakeWheels() {
 void Robot::setSpeedFromController(const ctrlAPI::Controller &controller) {
 	float leftSpeedPercent, rightSpeedPercent;
 	if (driveMode == DrivingMode::SINGLE_JOYSTICK) {
-		leftSpeedPercent = controller.leftAnalogYPercent + controller.leftAnalogXPercent;
-		rightSpeedPercent = controller.leftAnalogYPercent - controller.leftAnalogXPercent;
+		leftSpeedPercent = controller.leftAnalogYPercent - controller.leftAnalogXPercent;
+		rightSpeedPercent = controller.leftAnalogYPercent + controller.leftAnalogXPercent;
 	} else {
 		leftSpeedPercent = controller.rightAnalogYPercent;
-		rightSpeedPercent = controller.rightAnalogYPercent;
+		rightSpeedPercent = controller.leftAnalogYPercent;
 	}
 	moveWheels(leftSpeedPercent, rightSpeedPercent);
 }

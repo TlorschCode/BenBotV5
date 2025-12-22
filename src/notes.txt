@@ -1,1 +1,3 @@
 yourMotor.get_actual_velocity(); - RETURNS DEGREES
+
+Drivetrain gear ratio: 3/4ths (0.75)

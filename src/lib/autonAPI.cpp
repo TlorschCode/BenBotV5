@@ -37,7 +37,7 @@ void PID_Controller::updatePID(Vec2 &_target) {
     rightSpeed = PID_pos.x - PID_pos.y;
 }
 
-Vec2 PID_Controller::getPurePursuitLoc(float &checkRadius, Vec2 &target, Vec2 &prevTarget) {
+Vec2 PID_Controller::getPurePursuitLoc(const float &checkRadius, const Vec2 &target, const Vec2 &prevTarget) {
     robotAPI::Robot &dereffedRobot = *robot;
     Vec2 minTarget = {std::min(target.x, prevTarget.x), std::min(target.y, prevTarget.y)};
     Vec2 maxTarget = {std::max(target.x, prevTarget.x), std::max(target.y, prevTarget.y)};
@@ -67,7 +67,7 @@ Vec2 PID_Controller::getPurePursuitLoc(float &checkRadius, Vec2 &target, Vec2 &p
     return target; // Fallback
 }
 
-void PID_Controller::updateOdom() {
+float PID_Controller::updateOdom() {
     robotAPI::Robot &dereffedRobot = *robot;
     uint32_t now = pros::millis();
 
@@ -81,10 +81,10 @@ void PID_Controller::updateOdom() {
     float averageWheelRot = (leftMotorsPos + rightMotorsPos) / 2;
     float wheelRotDelta = averageWheelRot - prev_allWheelRot;
 
-    dereffedRobot.pos.x += ((wheelRotDelta / 360) * GEAR_RATIO * WHEEL_CIRCUMFERENCE) * sin(dereffedRobot.heading.getRadians());
-    dereffedRobot.pos.y += ((wheelRotDelta / 360) * GEAR_RATIO * WHEEL_CIRCUMFERENCE) * cos(dereffedRobot.heading.getRadians());
-
-    prev_allWheelRot = averageWheelRot;
+    prev_allWheelRot = dereffedRobot.pos.y;
+    dereffedRobot.pos.x += ((wheelRotDelta / 360.0f) * GEAR_RATIO * WHEEL_CIRCUMFERENCE) * sin(dereffedRobot.heading.getRadians());
+    dereffedRobot.pos.y += ((wheelRotDelta / 360.0f) * GEAR_RATIO * WHEEL_CIRCUMFERENCE) * cos(dereffedRobot.heading.getRadians());
+    return (wheelRotDelta / 360.0f);
 }
 
 } // namespace autonAPI
