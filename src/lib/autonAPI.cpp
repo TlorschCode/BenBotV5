@@ -81,7 +81,7 @@ float PID_Controller::updateOdom() {
     float averageWheelRot = (leftMotorsPos + rightMotorsPos) / 2;
     float wheelRotDelta = averageWheelRot - prev_allWheelRot;
 
-    prev_allWheelRot = dereffedRobot.pos.y;
+    prev_allWheelRot = averageWheelRot;
     dereffedRobot.pos.x += ((wheelRotDelta / 360.0f) * GEAR_RATIO * WHEEL_CIRCUMFERENCE) * sin(dereffedRobot.heading.getRadians());
     dereffedRobot.pos.y += ((wheelRotDelta / 360.0f) * GEAR_RATIO * WHEEL_CIRCUMFERENCE) * cos(dereffedRobot.heading.getRadians());
     return (wheelRotDelta / 360.0f);

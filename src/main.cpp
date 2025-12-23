@@ -225,24 +225,25 @@ void opcontrol() {
 	// autonomous();
 	clear_screen();
 	initialize();
-	while (true) {
-		controller.updateInputData();
-		printOnScreen(robot.autonController->updateOdom(), 2);
-		printOnScreen(robot.pos.y);
-		drivePipeline();
-		wait(FRAME);
-	}
-	robot.brakeWheels();
-	while (true) {
-	}
-	// while (true) {
-	// 	if (robot.drivetrain.topLeft.rawMotor.is_over_temp() || robot.drivetrain.topRight.rawMotor.is_over_temp() || robot.drivetrain.bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.bottomRight.rawMotor.is_over_temp()) break;
+	// while (robot.pos.y < 24) {
 	// 	controller.updateInputData();
-	// 	// robot.autonController->updateOdom();
 	// 	drivePipeline();
-	// 	scorePipeline();
+	// 	if (controller.getNewPress(Button::A)) {
+	// 		while (true) {}
+	// 	}
 	// 	wait(FRAME);
 	// }
+	// robot.brakeWheels();
+	// while (true) {
+	// }
+	while (true) {
+		if (robot.drivetrain.topLeft.rawMotor.is_over_temp() || robot.drivetrain.topRight.rawMotor.is_over_temp() || robot.drivetrain.bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.bottomRight.rawMotor.is_over_temp()) break;
+		controller.updateInputData();
+		// robot.autonController->updateOdom();
+		drivePipeline();
+		scorePipeline();
+		wait(FRAME);
+	}
 	controller.rawController.rumble("...");
 	printOnScreen(to_string(robot.pos.y));
 	robot.brakeWheels();
