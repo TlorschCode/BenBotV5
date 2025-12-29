@@ -74,9 +74,13 @@ float PID_Controller::updateOdom() {
     dereffedRobot.heading.setDegrees(truncate(dereffedRobot.inertial.get_rotation()));
 
     float leftMotorsPos = (dereffedRobot.drivetrain.topLeft.rawMotor.get_raw_position(&now) +
-                           dereffedRobot.drivetrain.topRight.rawMotor.get_raw_position(&now)) / 2;
-    float rightMotorsPos = (dereffedRobot.drivetrain.bottomLeft.rawMotor.get_raw_position(&now) +
-                            dereffedRobot.drivetrain.bottomRight.rawMotor.get_raw_position(&now)) / 2;
+                           dereffedRobot.drivetrain.middleLeft.rawMotor.get_raw_position(&now) + 
+                           dereffedRobot.drivetrain.bottomLeft.rawMotor.get_raw_position(&now)
+                        ) / 3;
+    float rightMotorsPos = (dereffedRobot.drivetrain.topRight.rawMotor.get_raw_position(&now) +
+                            dereffedRobot.drivetrain.middleRight.rawMotor.get_raw_position(&now) + 
+                            dereffedRobot.drivetrain.bottomRight.rawMotor.get_raw_position(&now)
+                        ) / 3;
 
     float averageWheelRot = (leftMotorsPos + rightMotorsPos) / 2;
     float wheelRotDelta = averageWheelRot - prev_allWheelRot;

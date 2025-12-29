@@ -9,6 +9,11 @@
 #include <tuple>
 #include <vector>
 
+constexpr pros::motor_brake_mode_e BRAKE_MODE_BRAKE = pros::motor_brake_mode_e::E_MOTOR_BRAKE_BRAKE;
+constexpr pros::motor_brake_mode_e BRAKE_MODE_HOLD = pros::motor_brake_mode_e::E_MOTOR_BRAKE_HOLD;
+constexpr pros::motor_brake_mode_e BRAKE_MODE_COAST = pros::motor_brake_mode_e::E_MOTOR_BRAKE_COAST;
+constexpr pros::motor_brake_mode_e BRAKE_MODE_INVALID = pros::motor_brake_mode_e::E_MOTOR_BRAKE_INVALID;
+
 using namespace std;
 using namespace ctrlAPI;
 using namespace robotAPI;
@@ -100,10 +105,11 @@ inline bool _otherBitsOn(const uint32_t &itm, const uint32_t &mask) {
 //| RUNTIME FUNCTIONS:
 
 void checkPauseProgram() { /// REMOVE THIS FUNCTION FOR FINAL COMPETITION
-	if (controller.getNewPress(Button::X)) {
-		robot.brakeWheels();
-		while (!controller.getNewPress(Button::X)) {
-			wait(10);
+	static bool isPaused = false;
+	if (controller.getNewPress(Button::A)) {
+		isPaused = !isPaused;
+		if (isPaused) {
+			robot.drivetrain.brakeWheels();
 		}
 	}
 }
@@ -153,16 +159,32 @@ void competition_initialize() {}
  */
 // MARK: Autonomous
 void autonomous() {
+	robot.drivetrain.setBrakeMode(BRAKE_MODE_HOLD);
+	while (true) {
+		controller.updateInputData();
+		checkPauseProgram();
+		robot.drivetrain.rightSpeed = controller.leftAnalogYPercent;
+		robot.drivetrain.leftSpeed = controller.leftAnalogYPercent;
+		robot.drivetrain.moveWheels();
+		printOnScreen(robot.pos.y);
+		robot.autonController->updateOdom();
+		wait(FRAME);
+	}
+	robot.drivetrain.brakeWheels();
+	while (true) {
+		printOnScreen(robot.pos.y);
+		wait(FRAME);
+	}
+
 	constexpr float robotCheckRadius = 10.0f;
 	Point target = autonPoints.at(0);
 	Point prevPoint = robot.pos;
 	Vec2 curTargetLoc = {0, 0};
 	Vec2 prevTargetLoc = {0, 0};
-	float left_speed = 1000, right_speed = 1000;
 	wait(12000);
-	robot.moveWheels(left_speed, right_speed);
+	robot.drivetrain.moveWheels();
 	wait(1000);
-	robot.brakeWheels();
+	robot.drivetrain.brakeWheels();
 	for (size_t ptIdx = 0; ptIdx < autonPoints.size(); ptIdx++) {
 		Point &point = autonPoints.at(ptIdx);
 		while (!point.visited) {
@@ -181,9 +203,10 @@ void brakeScoring(vector<pros::Motor*> scoringMotors) {
 // MARK: Driving
 void drivePipeline() {
 	if (controller.getNewPress(Button::X)) {
-		robot.swapDriveMode();
+		robot.drivetrain.swapDriveMode();
 	}
-	robot.setSpeedFromController(controller);
+	robot.drivetrain.setSpeedFromController(controller);
+	robot.drivetrain.moveWheels();
 }
 
 // MARK: Scoring
@@ -222,20 +245,9 @@ void scorePipeline() {
 
 // MARK: opcontrol
 void opcontrol() {
-	// autonomous();
 	clear_screen();
 	initialize();
-	// while (robot.pos.y < 24) {
-	// 	controller.updateInputData();
-	// 	drivePipeline();
-	// 	if (controller.getNewPress(Button::A)) {
-	// 		while (true) {}
-	// 	}
-	// 	wait(FRAME);
-	// }
-	// robot.brakeWheels();
-	// while (true) {
-	// }
+	autonomous();
 	while (true) {
 		if (robot.drivetrain.topLeft.rawMotor.is_over_temp() || robot.drivetrain.topRight.rawMotor.is_over_temp() || robot.drivetrain.bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.bottomRight.rawMotor.is_over_temp()) break;
 		controller.updateInputData();
@@ -246,7 +258,7 @@ void opcontrol() {
 	}
 	controller.rawController.rumble("...");
 	printOnScreen(to_string(robot.pos.y));
-	robot.brakeWheels();
+	robot.drivetrain.brakeWheels();
 	conveyor.brake();
 	intake.brake();
 	bandRotatorBottom.brake();
