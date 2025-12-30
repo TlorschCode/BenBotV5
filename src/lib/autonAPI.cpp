@@ -10,8 +10,8 @@ void PID_Controller::updatePID(Vec2 &_target) {
     robotAPI::Robot &dereffedRobot = *robot;
     float PID_rot;
     const float targetRot = degreesTill(dereffedRobot.pos, _target);
-    const bool doRotCalcs = (targetRot - dereffedRobot.heading.getDegrees()) > 10;
-    const double rot_radians = dereffedRobot.heading.getRadians();
+    const bool doRotCalcs = (targetRot - dereffedRobot.heading) > 10;
+    const double rot_radians = toRadians(dereffedRobot.heading);
 
     pPos = Vec2{(_target.x - dereffedRobot.pos.x) * pPos.weight, (_target.y - dereffedRobot.pos.y) * pPos.weight};
     iPos += Vec2{(iPos.x + pPos.x) * sin(rot_radians), (iPos.y + pPos.y) * cos(rot_radians)};
@@ -26,7 +26,7 @@ void PID_Controller::updatePID(Vec2 &_target) {
     if (doRotCalcs) {
         pRot = (targetRot - pRot) * pRot.weight;
         iRot += pRot * iRot.weight;
-        dRot = (prev_pRot - dereffedRobot.heading.getDegrees()) * dRot.weight;
+        dRot = (prev_pRot - dereffedRobot.heading) * dRot.weight;
         PID_rot = (pRot + (iRot * iRot.weight) + (dRot * dRot.weight)).val;
     } else {
         PID_rot = 0;
@@ -71,24 +71,18 @@ float PID_Controller::updateOdom() {
     robotAPI::Robot &dereffedRobot = *robot;
     uint32_t now = pros::millis();
 
-    dereffedRobot.heading.setDegrees(truncate(dereffedRobot.inertial.get_rotation()));
+    dereffedRobot.heading = truncate(dereffedRobot.inertial.get_rotation()); // Cutoff at 2 decimal places because inertial sensor is innacurate
 
-    float leftMotorsPos = (dereffedRobot.drivetrain.topLeft.rawMotor.get_raw_position(&now) +
-                           dereffedRobot.drivetrain.middleLeft.rawMotor.get_raw_position(&now) + 
-                           dereffedRobot.drivetrain.bottomLeft.rawMotor.get_raw_position(&now)
-                        ) / 3;
-    float rightMotorsPos = (dereffedRobot.drivetrain.topRight.rawMotor.get_raw_position(&now) +
-                            dereffedRobot.drivetrain.middleRight.rawMotor.get_raw_position(&now) + 
-                            dereffedRobot.drivetrain.bottomRight.rawMotor.get_raw_position(&now)
-                        ) / 3;
+    float leftMotorsPos = dereffedRobot.drivetrain.getLeftMotorsPos();
+    float rightMotorsPos = dereffedRobot.drivetrain.getRightMotorsPos();
 
     float averageWheelRot = (leftMotorsPos + rightMotorsPos) / 2;
     float wheelRotDelta = averageWheelRot - prev_allWheelRot;
-
     prev_allWheelRot = averageWheelRot;
-    dereffedRobot.pos.x += ((wheelRotDelta / 360.0f) * GEAR_RATIO * WHEEL_CIRCUMFERENCE) * sin(dereffedRobot.heading.getRadians());
-    dereffedRobot.pos.y += ((wheelRotDelta / 360.0f) * GEAR_RATIO * WHEEL_CIRCUMFERENCE) * cos(dereffedRobot.heading.getRadians());
-    return (wheelRotDelta / 360.0f);
+
+    dereffedRobot.pos.x += ((wheelRotDelta / 360.0f) * dereffedRobot.drivetrain.GEAR_RATIO * dereffedRobot.drivetrain.WHEEL_CIRCUMFERENCE) * sin(toRadians(dereffedRobot.heading));
+    dereffedRobot.pos.y += ((wheelRotDelta / 360.0f) * dereffedRobot.drivetrain.GEAR_RATIO * dereffedRobot.drivetrain.WHEEL_CIRCUMFERENCE) * cos(toRadians(dereffedRobot.heading));
+    return (wheelRotDelta / 360.0f); // Return this for debugging purposes
 }
 
 } // namespace autonAPI

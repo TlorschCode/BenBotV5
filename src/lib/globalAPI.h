@@ -3,17 +3,19 @@
 #include <string>
 #include <cmath>
 
-constexpr double PI = 3.14159265358979323846;
-constexpr float GEAR_RATIO = {0.75f}; // Wheel-motor gear ratio
-constexpr float WHEEL_CIRCUMFERENCE = {8.639379f}; //  inches
-constexpr float FRAME = {10}; // Frame time
-
-
-
-// MARK: Predec
+//| MARK: Predefs
 struct Vec2;
 struct W_Vec2;
 
+
+
+
+//| MARK: Constants
+constexpr double PI = 3.14159265358979323846;
+constexpr float FRAME = {10}; // Frame time
+
+
+//| MARK: Functions
 template <typename T>
 void printOnScreen(const T& input, int row = 1) {
     std::string printtext;
@@ -29,6 +31,11 @@ void printOnScreen(const T& input, int row = 1) {
     pros::lcd::set_text(row, printtext);
 }
 
+
+
+
+
+//| MARK: Structs
 struct Vec2 {
     float x;
     float y;
@@ -56,9 +63,7 @@ struct Vec2 {
 
 };
 
-
-
-
+//| MARK:  Classes
 class UnitInterval {
 private:
     float value;
@@ -108,7 +113,8 @@ inline UnitInterval operator-(float f, const UnitInterval& u) { return UnitInter
 inline UnitInterval operator*(float f, const UnitInterval& u) { return UnitInterval(f * float(u)); }
 inline UnitInterval operator/(float f, const UnitInterval& u) { return UnitInterval(f / float(u)); }
 
-// MARK: Weighted
+
+//| MARK: Weighted
 struct W_Vec2 {
     float x;
     float y;
@@ -162,19 +168,19 @@ struct W_float {
     constexpr W_float(float _val = 0.0f, float _weight = 0.0f) noexcept
         : val(_val), weight(_weight) {}
 
-    // --- Member operators (W_float <op> float) ---
+    // Member operators (W_float <op> float)
     constexpr inline W_float operator*(const float& a) const noexcept { return { val * a, weight }; }
     constexpr inline W_float operator+(const float& a) const noexcept { return { val + a, weight }; }
     constexpr inline W_float operator-(const float& a) const noexcept { return { val - a, weight }; }
     constexpr inline W_float operator/(const float& a) const noexcept { return { val / a, weight }; }
 
-    // --- Member operators (W_float <op> W_float) ---
+    // Member operators (W_float <op> W_float)
     constexpr inline W_float operator*(const W_float& a) const noexcept { return { val * a.val, weight }; }
     constexpr inline W_float operator+(const W_float& a) const noexcept { return { val + a.val, weight }; }
     constexpr inline W_float operator-(const W_float& a) const noexcept { return { val - a.val, weight }; }
     constexpr inline W_float operator/(const W_float& a) const noexcept { return { val / a.val, weight }; }
 
-    // --- Compound assignment (ignore weight) ---
+    // Compound assignment (ignore weight)
     constexpr inline W_float& operator*=(const float& a) noexcept { val *= a; return *this; }
     constexpr inline W_float& operator+=(const float& a) noexcept { val += a; return *this; }
     constexpr inline W_float& operator-=(const float& a) noexcept { val -= a; return *this; }
@@ -185,12 +191,12 @@ struct W_float {
     constexpr inline W_float& operator-=(const W_float& a) noexcept { val -= a.val; return *this; }
     constexpr inline W_float& operator/=(const W_float& a) noexcept { val /= a.val; return *this; }
 
-    // --- Assignment (ignore weight) ---
+    // Assignment (ignore weight)
     constexpr inline W_float& operator=(const float& a) noexcept { val = a; return *this; }
     constexpr inline W_float& operator=(const W_float& a) noexcept { val = a.val; return *this; }
 };
 
-// --- Non-member symmetric overloads (float <op> W_float) ---
+// Non-member symmetric overloads (float <op> W_float)
 constexpr inline W_float operator*(float a, const W_float& b) noexcept { return { a * b.val, b.weight }; }
 constexpr inline W_float operator+(float a, const W_float& b) noexcept { return { a + b.val, b.weight }; }
 constexpr inline W_float operator-(float a, const W_float& b) noexcept { return { a - b.val, b.weight }; }
@@ -198,7 +204,7 @@ constexpr inline W_float operator/(float a, const W_float& b) noexcept { return 
 
 
 
-// MARK: Utilities
+//| MARK: Utilities
 inline double toRadians(float degrees) {
 	return degrees * (PI / 180);
 }

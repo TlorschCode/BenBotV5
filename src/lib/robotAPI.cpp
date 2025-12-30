@@ -47,30 +47,38 @@ void DrivetrainMotor::brake() {
 void DrivetrainMotor::setDirection(bool reversed) {
 	rawMotor.set_reversed(reversed);
 }
-double DrivetrainMotor::getActualVelocity() {
-	return rawMotor.get_actual_velocity();
-}
+
 
 //| MARK: Drivetrain
 Drivetrain::Drivetrain()
-	: topLeft(DrivetrainMotor()), topRight(DrivetrainMotor()), bottomLeft(DrivetrainMotor()), bottomRight(DrivetrainMotor()) {}
+	: topLeft(DrivetrainMotor()), topRight(DrivetrainMotor()), bottomLeft(DrivetrainMotor()), bottomRight(DrivetrainMotor()),
+	  WHEEL_CIRCUMFERENCE(0), GEAR_RATIO(0) {}
 
-Drivetrain::Drivetrain(std::array<DrivetrainMotor, 6> _wheels)
-	: topLeft(_wheels.at(0)), middleLeft(_wheels.at(1)), bottomLeft(_wheels.at(2)), topRight(_wheels.at(3)), middleRight(_wheels.at(4)), bottomRight(_wheels.at(5)) {}
+// Drivetrain constructor
+// hardwareGearRatio is the motor-turns to wheel-turns ratio, for robots with gearing between the motor shaft and the actual wheel
+Drivetrain::Drivetrain(std::array<DrivetrainMotor, 6> _wheels, float wheelCircumference, float hardwareGearRatio=1)
+	: topLeft(_wheels.at(0)), middleLeft(_wheels.at(1)), bottomLeft(_wheels.at(2)), topRight(_wheels.at(3)), middleRight(_wheels.at(4)), bottomRight(_wheels.at(5)),
+	  WHEEL_CIRCUMFERENCE(wheelCircumference), GEAR_RATIO(hardwareGearRatio) {}
 
-Drivetrain::Drivetrain(DrivetrainMotor _topLeft, DrivetrainMotor _middleLeft, DrivetrainMotor _bottomLeft, DrivetrainMotor _topRight, DrivetrainMotor _middleRight, DrivetrainMotor _bottomRight)
-	: topLeft(_topLeft), middleLeft(_middleLeft), bottomLeft(_bottomLeft), topRight(_topRight), middleRight(_middleRight), bottomRight(_bottomRight) {};
+// Drivetrain constructor
+// hardwareGearRatio is the motor-turns to wheel-turns ratio, for robots with gearing between the motor shaft and the actual wheel
+Drivetrain::Drivetrain(const DrivetrainMotor &_topLeft, const DrivetrainMotor &_middleLeft, const DrivetrainMotor &_bottomLeft, const DrivetrainMotor &_topRight, const DrivetrainMotor &_middleRight, const DrivetrainMotor &_bottomRight,
+					   float wheelCircumference, float hardwareGearRatio=1)
+	: topLeft(_topLeft), middleLeft(_middleLeft), bottomLeft(_bottomLeft), topRight(_topRight), middleRight(_middleRight), bottomRight(_bottomRight),
+	  WHEEL_CIRCUMFERENCE(wheelCircumference), GEAR_RATIO(hardwareGearRatio) {};
 
-Drivetrain::Drivetrain(std::array<pros::Motor, 6> _drivetrain, pros::motor_gearset_e _gearset)
+// Drivetrain constructor
+// hardwareGearRatio is the motor-turns to wheel-turns ratio, for robots with gearing between the motor shaft and the actual wheel
+Drivetrain::Drivetrain(const std::array<pros::Motor, 6> &_drivetrain, pros::motor_gearset_e _gearset, float wheelCircumference, float hardwareGearRatio=1)
 	: topLeft(_drivetrain.at(0), false), middleLeft(_drivetrain.at(2), false), bottomLeft(_drivetrain.at(4), false), 
-	  topRight(_drivetrain.at(1), false), middleRight(_drivetrain.at(3), false), bottomRight(_drivetrain.at(5), false) {}
+	  topRight(_drivetrain.at(1), false), middleRight(_drivetrain.at(3), false), bottomRight(_drivetrain.at(5), false),
+	  WHEEL_CIRCUMFERENCE(wheelCircumference), GEAR_RATIO(hardwareGearRatio) {}
 
 void Drivetrain::setBrakeMode(pros::motor_brake_mode_e mode) {
 	for (DrivetrainMotor *motor : getWheelsAsPtrs()) {
 		motor->rawMotor.set_brake_mode(mode);
 	}
 }
-
 void Drivetrain::moveWheels() {
 	topLeft.setVelocityPercent(leftSpeed);
 	middleLeft.setVelocityPercent(leftSpeed);
@@ -101,17 +109,9 @@ void Drivetrain::brakeWheels() {
 	}
 }
 
-
-//| MARK: Heading
-float Heading::getDegrees() const { return degrees; }
-double Heading::getRadians() const { return toRadians(degrees); }
-void Heading::setDegrees(float amount) { degrees = amount; }
-void Heading::setRadians(double amount) { degrees = toDegrees(amount); }
-
 // MARK: Robot
-Robot::Robot(std::array<DrivetrainMotor, 6> _wheels, pros::Imu _inertial)
-	: drivetrain(_wheels),
-	  inertial(_inertial),
-	  autonController(std::make_unique<autonAPI::PID_Controller>()) {
-		autonController->bindRobot(this);
-	  }
+Robot::Robot(std::array<DrivetrainMotor, 6> _wheels, float wheelCircumference, float hardwareGearRatio, pros::Imu _inertial)
+		: drivetrain(_wheels, wheelCircumference, hardwareGearRatio), inertial(_inertial),
+		  autonController(std::make_unique<autonAPI::PID_Controller>()) {
+	autonController->bindRobot(this);
+}

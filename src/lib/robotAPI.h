@@ -38,7 +38,13 @@ public:
 	void setVelocityPercent(float vel);
 	void brake();
 	void setDirection(bool reversed);
-	double getActualVelocity();
+	inline double getActualVelocity() const {
+		return rawMotor.get_actual_velocity();
+	}
+	inline double getPosition() const {
+		return rawMotor.get_position();
+	}
+
 	constexpr inline DrivetrainMotor& operator=(const DrivetrainMotor& _new) {
 		RPM = _new.RPM;
 		reversed = _new.reversed;
@@ -51,6 +57,8 @@ public:
 class Drivetrain {
 private:
 public:
+	const float WHEEL_CIRCUMFERENCE; // inches
+	const float GEAR_RATIO;
 	DrivingMode driveMode = DrivingMode::TANK;
 	DrivetrainMotor topLeft;
 	DrivetrainMotor middleLeft;
@@ -62,9 +70,12 @@ public:
 	float rightSpeed = 0;
 
 	Drivetrain();
-	Drivetrain(std::array<DrivetrainMotor, 6> _wheels);
-	Drivetrain(DrivetrainMotor _topLeft, DrivetrainMotor _middleLeft, DrivetrainMotor _bottomLeft, DrivetrainMotor _topRight, DrivetrainMotor _middleRight, DrivetrainMotor _bottomRight);
-	Drivetrain(std::array<pros::Motor, 6> drivetrain, pros::motor_gearset_e _gearset);
+	Drivetrain(std::array<DrivetrainMotor, 6> _wheels, float wheelCircumference, float hardwareGearRatio);
+	Drivetrain(const DrivetrainMotor &_topLeft, const DrivetrainMotor &_middleLeft, const DrivetrainMotor &_bottomLeft,
+		       const DrivetrainMotor &_topRight, const DrivetrainMotor &_middleRight, const DrivetrainMotor &_bottomRight,
+			   float wheelCircumference, float hardwareGearRatio);
+	Drivetrain(const std::array<pros::Motor, 6> &drivetrain, pros::motor_gearset_e _gearset,
+			   float wheelCircumference, float hardwareGearRatio);
 	constexpr inline Drivetrain& operator=(const Drivetrain& _new) noexcept {
 		topLeft = _new.topLeft;
 		middleLeft = _new.middleLeft;
@@ -85,6 +96,16 @@ public:
 	inline void swapDriveMode() noexcept {
 		driveMode = (driveMode == DrivingMode::SINGLE_JOYSTICK) ? DrivingMode::TANK : DrivingMode::SINGLE_JOYSTICK;
 	}
+	// Returns the averaged position of all left motors
+	// Return unit: the encoding unit of each motor
+	inline float getLeftMotorsPos() const {
+		return (topLeft.getPosition() + middleLeft.getPosition() + bottomLeft.getPosition()) / 3;
+	}
+	// Returns the averaged position of all right motors
+	// Return unit: the encoding unit of each motor
+	inline float getRightMotorsPos() const {
+		return (topRight.getPosition() + middleRight.getPosition() + bottomRight.getPosition()) / 3;
+	}
 
 	void setBrakeMode(pros::motor_brake_mode_e mode);
 	void moveWheels();
@@ -93,28 +114,20 @@ public:
 	void setSpeedFromController(const ctrlAPI::Controller &controller);
 };
 
-// MARK: Heading
-class Heading {
-private:
-	float degrees = 0;
-public:
-	Heading() = default;
-	float getDegrees() const;
-	double getRadians() const;
-	void setDegrees(float amount);
-	void setRadians(double amount);
-};
 // MARK: Robot
 // A container for a drivetrain, an auton controlller, and various other parts.
+// pos: position of the robot
+// heading: the heading of the robot (in degrees)
 class Robot {
 public:
 	Vec2 pos = {0, 0};
-	Heading heading = {};
+	float heading = 0;
 	Drivetrain drivetrain;
 	pros::Imu inertial;
 	std::unique_ptr<autonAPI::PID_Controller> autonController;
 
-	Robot(std::array<DrivetrainMotor, 6> _wheels, pros::Imu _inertial);
+	// hardwareGearRatio is the external gear ratio for the drivetrain from motor shaft rotations to actual wheel rotations. This is common for drivetrains with motors placed between wheels.
+	Robot(std::array<DrivetrainMotor, 6> _wheels, float wheelCircumference, float hardwareGearRatio, pros::Imu _inertial);
 
 	constexpr inline Robot& operator=(const Robot& _new) noexcept {
 		pos = _new.pos;

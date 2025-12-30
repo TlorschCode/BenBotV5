@@ -63,7 +63,7 @@ Robot init_robot() {
 		middleRight,
 		bottomRight
 	};
-	return Robot(drivetrain, inertial);
+	return Robot(drivetrain, 8.639379f, 0.75f, inertial);
 }
 
 Robot robot = init_robot();
