@@ -1,5 +1,6 @@
 #pragma once
 #include "globalAPI.h"
+#include <array>
 
 namespace robotAPI { class Robot; }
 
@@ -20,27 +21,22 @@ namespace autonAPI {
     class PID_Controller {
     private:
         robotAPI::Robot* robot = nullptr;
-        W_Vec2 pPos = {0, 0, 6.0f};
-        W_Vec2 iPos = {0, 0, 0.05f};
-        W_Vec2 dPos = {0, 0, 4.2f};
-        Vec2 prev_pPos = {0, 0};
+        W_float pPos = {0, 0.60f};
+        W_float iPos = {0, 0.005f};
+        W_float dPos = {0, 0.42f};
 
-        W_float pRot = {0, 1.0f};
-        W_float iRot = {0, 0.05f};
-        W_float dRot = {0, 0.85f};
+        W_float pRot = {0, 0.10f};
+        W_float iRot = {0, 0.005f};
+        W_float dRot = {0, 0.085f};
         float prev_pRot = 0;
         float prev_rot = 0;
         float prev_allWheelRot = 0;
-
     public:
-        float leftSpeed = 0;
-        float rightSpeed = 0;
-
         PID_Controller() = default;
 
-        void updatePID(Vec2& _target);
+        Vec2 getSpeedPID_to(Vec2& _target);
         float updateOdom();
         Vec2 getPurePursuitLoc(const float& checkRadius, const Vec2& target, const Vec2& prevTarget);
-        inline void bindRobot(robotAPI::Robot* r) { robot = r; }
+        inline void _bindRobot(robotAPI::Robot* r) { robot = r; }
     };
 }

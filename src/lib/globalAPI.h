@@ -17,7 +17,7 @@ constexpr float FRAME = {10}; // Frame time
 
 //| MARK: Functions
 template <typename T>
-void printOnScreen(const T& input, int row = 1) {
+void printOnScreen(const T& input, int row = 0) {
     std::string printtext;
     if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, const char*>) {
         // Handle string and C-style string types
@@ -158,7 +158,34 @@ constexpr inline Vec2 operator/(const float& a, const Vec2& b) noexcept { return
 struct W_int {
     int val;
     float weight;
-    W_int(int _val=0, float _weight=0) : val(_val), weight(_weight) {};
+    constexpr W_int(int _val=0, float _weight=0) noexcept
+        : val(_val), weight(_weight) {};
+
+    constexpr inline W_int operator*(const int& a) const noexcept { return { val * a, weight }; }
+    constexpr inline W_int operator+(const int& a) const noexcept { return { val + a, weight }; }
+    constexpr inline W_int operator-(const int& a) const noexcept { return { val - a, weight }; }
+    constexpr inline W_int operator/(const int& a) const noexcept { return { val / a, weight }; }
+
+    // Member operators (W_float <op> W_float)
+    constexpr inline W_int operator*(const W_int& a) const noexcept { return { val * a.val, weight }; }
+    constexpr inline W_int operator+(const W_int& a) const noexcept { return { val + a.val, weight }; }
+    constexpr inline W_int operator-(const W_int& a) const noexcept { return { val - a.val, weight }; }
+    constexpr inline W_int operator/(const W_int& a) const noexcept { return { val / a.val, weight }; }
+
+    // Compound assignment (ignore weight)
+    constexpr inline W_int& operator*=(const int& a) noexcept { val *= a; return *this; }
+    constexpr inline W_int& operator+=(const int& a) noexcept { val += a; return *this; }
+    constexpr inline W_int& operator-=(const int& a) noexcept { val -= a; return *this; }
+    constexpr inline W_int& operator/=(const int& a) noexcept { val /= a; return *this; }
+
+    constexpr inline W_int& operator*=(const W_int& a) noexcept { val *= a.val; return *this; }
+    constexpr inline W_int& operator+=(const W_int& a) noexcept { val += a.val; return *this; }
+    constexpr inline W_int& operator-=(const W_int& a) noexcept { val -= a.val; return *this; }
+    constexpr inline W_int& operator/=(const W_int& a) noexcept { val /= a.val; return *this; }
+
+    // Assignment (ignore weight)
+    constexpr inline W_int& operator=(const float& a) noexcept { val = a; return *this; }
+    constexpr inline W_int& operator=(const W_int& a) noexcept { val = a.val; return *this; }
 };
 
 struct W_float {
@@ -231,4 +258,9 @@ inline float degreesTill(Vec2 &from, Vec2 &to) {
 
 inline float radiansTill(Vec2 &from, Vec2 &to) {
 	return std::atan2(to.y - from.y, to.x - from.x);
+}
+
+// Returns in the same unit that was passed into it
+inline double distanceBetween(const Vec2 &pos1, const Vec2 &pos2) {
+    return std::sqrt((std::pow(pos2.x - pos1.x, 2) + std::pow(pos2.y - pos1.y, 2)));
 }

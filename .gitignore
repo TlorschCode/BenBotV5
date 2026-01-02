@@ -6,6 +6,9 @@
 *.bin
 *.elf
 
+include/
+firmware/
+
 # PROS
 bin/
 .vscode/

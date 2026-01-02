@@ -1,4 +1,4 @@
-#include "lib/mainAPI.h"
+#include "lib/common_includes.h"
 #include <fstream>
 #include <string>
 #include <iostream>
@@ -48,7 +48,7 @@ float allRotPrev = {0}; // The previous rotation of all the drivetrain wheels
 
 bool pressingPneumatics = false;
 // MARK: Init robot
-Robot init_robot() {
+inline Robot init_robot() {
 	DrivetrainMotor topLeft(4, false, pros::v5::MotorGearset::blue);    // Reverse
 	DrivetrainMotor middleLeft(5, false, pros::v5::MotorGearset::blue); // Reverse
 	DrivetrainMotor bottomLeft(6, true, pros::v5::MotorGearset::blue);  // Normal
@@ -67,12 +67,6 @@ Robot init_robot() {
 }
 
 Robot robot = init_robot();
-vector<Point> autonPoints = {
-	{0, 0},
-	{0, 24},
-	{12, 12}
-};
-DrivingMode drivingMode = DrivingMode::SINGLE_JOYSTICK;
 
 
 //| NON-DEFAULT FUNCTIONS |//
@@ -122,10 +116,10 @@ void initialize() {
 	init_robot();
 	pros::lcd::initialize();
 	robot.inertial.reset();
-	wait(2300); // Wait for inertial to calibrate
+	wait(1000); // Wait for inertial to calibrate
 }
 
-// MARK: Disabled
+// MARK-: Disabled
 /**
  * Runs while the robot is in the disabled state of Field Management System or
  * the VEX Competition Switch, following either autonomous or opcontrol. When
@@ -159,39 +153,44 @@ void competition_initialize() {}
  */
 // MARK: Autonomous
 void autonomous() {
+	printOnScreen("AUTON!");
+	wait(100);
 	robot.drivetrain.setBrakeMode(BRAKE_MODE_HOLD);
-	while (true) {
-		controller.updateInputData();
-		checkPauseProgram();
-		robot.drivetrain.rightSpeed = controller.leftAnalogYPercent;
-		robot.drivetrain.leftSpeed = controller.leftAnalogYPercent;
-		robot.drivetrain.moveWheels();
-		printOnScreen(robot.pos.y);
-		robot.autonController->updateOdom();
-		wait(FRAME);
-	}
-	robot.drivetrain.brakeWheels();
-	while (true) {
-		printOnScreen(robot.pos.y);
-		wait(FRAME);
-	}
 
+	// Init
+	vector<Point> autonPoints = {
+		{0, 0},
+		{0, 24},
+		{12, 12},
+		{0, -24}
+	};
 	constexpr float robotCheckRadius = 10.0f;
 	Point target = autonPoints.at(0);
 	Point prevPoint = robot.pos;
 	Vec2 curTargetLoc = {0, 0};
 	Vec2 prevTargetLoc = {0, 0};
-	wait(12000);
-	robot.drivetrain.moveWheels();
-	wait(1000);
+
 	robot.drivetrain.brakeWheels();
-	for (size_t ptIdx = 0; ptIdx < autonPoints.size(); ptIdx++) {
+	for (size_t ptIdx = 0; ptIdx < autonPoints.size() - 1; ptIdx++) { // - 1 so we can have an extra point the robot doesn't visit but it aims for
 		Point &point = autonPoints.at(ptIdx);
 		while (!point.visited) {
-			curTargetLoc = robot.autonController->getPurePursuitLoc(robotCheckRadius, point.pos, prevTargetLoc);
-			// robot.pidController.update(curTargetLoc, robot);
+			curTargetLoc = robot.autonController.get()->getPurePursuitLoc(robotCheckRadius, point.pos, prevTargetLoc);
+			robot.drivetrain.setSpeedFromVec2(robot.autonController.get()->getSpeedPID_to(point.pos));
+			printOnScreen(distanceBetween(robot.pos, point.pos));
+			printOnScreen((distanceBetween(robot.pos, point.pos) < 2), 1);
+			printOnScreen(to_string(point.pos.x) + ", " + to_string(point.pos.y), 2);
+			// printOnScreen(robot.drivetrain.leftSpeed, 3);
+			// printOnScreen(robot.drivetrain.rightSpeed, 4);
+			printOnScreen(robot.autonController.get()->getSpeedPID_to(point.pos).x, 4);
+			printOnScreen(robot.autonController.get()->getSpeedPID_to(point.pos).y, 5);
+			// When within 2 inches of a point, mark that point as visted
+			point.visited = (distanceBetween(robot.pos, point.pos) < 2);
+			checkPauseProgram();
+			wait(FRAME);
 		}
 	}
+	printOnScreen("WE DID IT!");
+	wait(100000);
 }
 
 void brakeScoring(vector<pros::Motor*> scoringMotors) {
@@ -249,7 +248,7 @@ void opcontrol() {
 	initialize();
 	autonomous();
 	while (true) {
-		if (robot.drivetrain.topLeft.rawMotor.is_over_temp() || robot.drivetrain.topRight.rawMotor.is_over_temp() || robot.drivetrain.bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.bottomRight.rawMotor.is_over_temp()) break;
+		if (robot.drivetrain.w_topLeft.rawMotor.is_over_temp() || robot.drivetrain.w_topRight.rawMotor.is_over_temp() || robot.drivetrain.w_bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.w_bottomRight.rawMotor.is_over_temp()) break;
 		controller.updateInputData();
 		// robot.autonController->updateOdom();
 		drivePipeline();

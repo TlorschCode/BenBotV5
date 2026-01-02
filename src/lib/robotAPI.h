@@ -60,35 +60,54 @@ public:
 	const float WHEEL_CIRCUMFERENCE; // inches
 	const float GEAR_RATIO;
 	DrivingMode driveMode = DrivingMode::TANK;
-	DrivetrainMotor topLeft;
-	DrivetrainMotor middleLeft;
-	DrivetrainMotor bottomLeft;
-	DrivetrainMotor topRight;
-	DrivetrainMotor middleRight;
-	DrivetrainMotor bottomRight;
+	DrivetrainMotor w_topLeft;
+	DrivetrainMotor w_middleLeft;
+	DrivetrainMotor w_bottomLeft;
+	DrivetrainMotor w_topRight;
+	DrivetrainMotor w_middleRight;
+	DrivetrainMotor w_bottomRight;
 	float leftSpeed = 0;
 	float rightSpeed = 0;
 
+	// Empty Drivetrain constructor
 	Drivetrain();
-	Drivetrain(std::array<DrivetrainMotor, 6> _wheels, float wheelCircumference, float hardwareGearRatio);
+
+	// Drivetrain constructor
+	// hardwareGearRatio is the motor-turns to wheel-turns ratio, for robots with gearing between the motor shaft and the actual wheel.
+	Drivetrain(const std::array<DrivetrainMotor, 6> &_wheels, float wheelCircumference, float hardwareGearRatio);
+
+	// Drivetrain constructor
+    // hardwareGearRatio is the motor-turns to wheel-turns ratio, for robots with gearing between the motor shaft and the actual wheel.
 	Drivetrain(const DrivetrainMotor &_topLeft, const DrivetrainMotor &_middleLeft, const DrivetrainMotor &_bottomLeft,
 		       const DrivetrainMotor &_topRight, const DrivetrainMotor &_middleRight, const DrivetrainMotor &_bottomRight,
 			   float wheelCircumference, float hardwareGearRatio);
+	
+	// Drivetrain constructor
+	// hardwareGearRatio is the motor-turns to wheel-turns ratio, for robots with gearing between the motor shaft and the actual wheel.
 	Drivetrain(const std::array<pros::Motor, 6> &drivetrain, pros::motor_gearset_e _gearset,
 			   float wheelCircumference, float hardwareGearRatio);
+	
+
 	constexpr inline Drivetrain& operator=(const Drivetrain& _new) noexcept {
-		topLeft = _new.topLeft;
-		middleLeft = _new.middleLeft;
-		bottomLeft = _new.bottomLeft;
-		topRight = _new.topRight;
-		middleRight = _new.middleRight;
-		bottomRight = _new.bottomRight;
+		w_topLeft = _new.w_topLeft;
+		w_middleLeft = _new.w_middleLeft;
+		w_bottomLeft = _new.w_bottomLeft;
+		w_topRight = _new.w_topRight;
+		w_middleRight = _new.w_middleRight;
+		w_bottomRight = _new.w_bottomRight;
 		return *this;
 	}
 
+	// Returns the drivetrain's wheels as an array of pointers to them.
+	// Order:
+	// - top-left, middle-left, bottom-left, top-right, middle-right, bottom-right
 	inline std::array<DrivetrainMotor*, 6> getWheelsAsPtrs() noexcept {
-		return {&topLeft, &topRight, &middleLeft, &middleRight, &bottomLeft, &bottomRight};
+		return {&w_topLeft, &w_middleLeft, &w_bottomLeft, &w_topRight, &w_middleRight,&w_bottomRight};
 	};
+	// Sets driveMode. Can be either: SINGLE_JOYSTICK or TANK.
+	// driveMode determines how the drivetrain can be controlled with joysticks.
+	// - SINGLE_JOYSTICK means the drivetrain will be controlled solely with the left joystick.
+	// - TANK means the drivetrain will be controlled by both joysticks, only accounting for their vertical positions.
 	inline void setDriveMode(DrivingMode mode) noexcept {
 		driveMode = mode;
 	}
@@ -99,18 +118,33 @@ public:
 	// Returns the averaged position of all left motors
 	// Return unit: the encoding unit of each motor
 	inline float getLeftMotorsPos() const {
-		return (topLeft.getPosition() + middleLeft.getPosition() + bottomLeft.getPosition()) / 3;
+		return (w_topLeft.getPosition() + w_middleLeft.getPosition() + w_bottomLeft.getPosition()) / 3;
 	}
 	// Returns the averaged position of all right motors
 	// Return unit: the encoding unit of each motor
 	inline float getRightMotorsPos() const {
-		return (topRight.getPosition() + middleRight.getPosition() + bottomRight.getPosition()) / 3;
+		return (w_topRight.getPosition() + w_middleRight.getPosition() + w_bottomRight.getPosition()) / 3;
 	}
 
+	// Sets the drivetrarin's leftSpeed and rightSpeed according to a Vec2.
+	// leftSpeed is set to the 'x' attribute of the Vec2, and rightSpeed is set to the 'y' attribute.
+	void setSpeedFromVec2(const Vec2 &vec);
+
+	// Sets the brake mode of each of the wheels.
 	void setBrakeMode(pros::motor_brake_mode_e mode);
+
+	// Moves the wheels according to the drivetrain's leftSpeed and rightSpeed.
 	void moveWheels();
+
+	// Moves the wheels according to the inputted speedLeft and speedRight.
+	// Sets the drivetrain's leftSpeed and rightSpeed to the corresponding inputs.
 	void moveWheels(float speedLeft, float speedRight);
+
+	// Brakes all of the wheels
 	void brakeWheels();
+
+	// Sets the wheels' speeds from an inputted controller.
+	// Uses driveMode and calculates speed for tank drive or single-joystick accordingly.
 	void setSpeedFromController(const ctrlAPI::Controller &controller);
 };
 
