@@ -175,14 +175,14 @@ void autonomous() {
 		Point &point = autonPoints.at(ptIdx);
 		while (!point.visited) {
 			curTargetLoc = robot.autonController.get()->getPurePursuitLoc(robotCheckRadius, point.pos, prevTargetLoc);
-			robot.drivetrain.setSpeedFromVec2(robot.autonController.get()->getSpeedPID_to(point.pos));
+			robot.drivetrain.setSpeedFromVec2(robot.autonController.get()->getSpeedFromPID_to(point.pos));
 			printOnScreen(distanceBetween(robot.pos, point.pos));
 			printOnScreen((distanceBetween(robot.pos, point.pos) < 2), 1);
 			printOnScreen(to_string(point.pos.x) + ", " + to_string(point.pos.y), 2);
 			// printOnScreen(robot.drivetrain.leftSpeed, 3);
 			// printOnScreen(robot.drivetrain.rightSpeed, 4);
-			printOnScreen(robot.autonController.get()->getSpeedPID_to(point.pos).x, 4);
-			printOnScreen(robot.autonController.get()->getSpeedPID_to(point.pos).y, 5);
+			printOnScreen(robot.autonController.get()->getSpeedFromPID_to(point.pos).x, 4);
+			printOnScreen(robot.autonController.get()->getSpeedFromPID_to(point.pos).y, 5);
 			// When within 2 inches of a point, mark that point as visted
 			point.visited = (distanceBetween(robot.pos, point.pos) < 2);
 			checkPauseProgram();

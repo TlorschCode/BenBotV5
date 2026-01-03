@@ -28,13 +28,12 @@ namespace autonAPI {
         W_float pRot = {0, 0.10f};
         W_float iRot = {0, 0.005f};
         W_float dRot = {0, 0.085f};
-        float prev_pRot = 0;
         float prev_rot = 0;
         float prev_allWheelRot = 0;
     public:
         PID_Controller() = default;
 
-        Vec2 getSpeedPID_to(Vec2& _target);
+        Vec2 getSpeedFromPID_to(Vec2& _target);
         float updateOdom();
         Vec2 getPurePursuitLoc(const float& checkRadius, const Vec2& target, const Vec2& prevTarget);
         inline void _bindRobot(robotAPI::Robot* r) { robot = r; }

@@ -11,49 +11,44 @@ namespace autonAPI {
 
 // Returns the left and right speed a robot's drivetrain should adopt in order to go towards a point.
 // - The left speed is the 'x' attribute and the right speed is the 'y' attribute of the returned Vec2
-Vec2 PID_Controller::getSpeedPID_to(Vec2 &target) {
+Vec2 PID_Controller::getSpeedFromPID_to(Vec2 &target) {
+    //| Statics
     static float prevPosError = 0.0f;
     static float prevRotError = 0.0f;
     static float prev_pPos = 0.0f;
+    static float prev_pRot = 0.0f;
     
+    //| Setup
     const float targetRot = degreesTill(robot->pos, target);
-    const double robot_rotRadians = toRadians(robot->heading);
 
-    const float curPosError = distanceBetween(robot->pos, target);
+    //| Rotation
     const float curRotError = targetRot - robot->heading;
+    // PID calc
+    pRot = (targetRot - pRot) * pRot.weight;
+    iRot += pRot * iRot.weight;
+    dRot = dRot.weight * (curRotError - prevRotError);
+    prev_pRot = pRot.val;
+    const float PID_rot = (pRot + (iRot * iRot.weight) + (dRot * dRot.weight)).val;
 
-    float PID_rotScale;
 
-    // Get PID for position
+    //| Position
+    const float curPosError = distanceBetween(robot->pos, target); 
+    // PID calc
     pPos = pPos.weight * curPosError;
     iPos += pPos;
     dPos = dPos.weight * (curPosError - prevPosError);
     prev_pPos = pPos.val;
-
-    // Construct the modified position (originally the target location)
     const float PID_pos = (pPos + (iPos * iPos.weight) + (dPos * dPos.weight)).val;
 
-    // Calculate rotation PID if we aren't facing towards the target (with margin of 5 degrees)
-    if ((curRotError) > 5) {
-        // Calculate PID
-        pRot = (targetRot - pRot) * pRot.weight;
-        iRot += pRot * iRot.weight;
-        dRot = dRot.weight * (curRotError - prevRotError);
-        prev_pRot = pRot.val;
-        PID_rotScale = (pRot + (iRot * iRot.weight) + (dRot * dRot.weight)).val; // A value to scale rotation weighting
-        // Convert the direction we need to be facing into a position
-    } else {
-        PID_rotScale = 1;
-    }
-    
+    //| Cleanup
     prevRotError = curRotError;
     prevPosError = curPosError;
-    // TODO: PID calculations are wonked
-    return dRot.val;
-    // return Vec2{
-    //     finalSpeeds.x + finalSpeeds.y,
-    //     finalSpeeds.x - finalSpeeds.y
-    // };
+
+    //| Result
+    return Vec2{
+        PID_pos + PID_rot,
+        PID_pos - PID_rot
+    };
 }
 
 
