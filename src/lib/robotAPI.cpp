@@ -5,7 +5,7 @@
 
 using namespace robotAPI;
 
-// MARK: DrivetrainMotor
+//| MARK: DrivetrainMotor
 DrivetrainMotor::DrivetrainMotor()
 			: rawMotor(pros::Motor(1, pros::v5::MotorGearset::green)), reversed(false), RPM(0) {
 	rawMotor.set_brake_mode(pros::motor_brake_mode_e::E_MOTOR_BRAKE_HOLD);
@@ -35,7 +35,7 @@ DrivetrainMotor::DrivetrainMotor(const pros::Motor &_motor, bool _reversed)
 void DrivetrainMotor::configMotor(pros::Motor &_motor, bool _reversed) {
 	_motor.set_reversed(_reversed);
 	_motor.set_brake_mode(pros::motor_brake_mode_e::E_MOTOR_BRAKE_HOLD);
-	_motor.set_encoder_units(pros::motor_encoder_units_e::E_MOTOR_ENCODER_DEGREES); // Could set to rotations, but degrees gives more control
+	_motor.set_encoder_units(pros::motor_encoder_units_e::E_MOTOR_ENCODER_DEGREES); // Could set to rotations, but degrees is more intuitive
 }
 
 void DrivetrainMotor::setVelocityPercent(float vel) {
@@ -69,8 +69,8 @@ Drivetrain::Drivetrain(const DrivetrainMotor &_topLeft, const DrivetrainMotor &_
 	  WHEEL_CIRCUMFERENCE(wheelCircumference), GEAR_RATIO(hardwareGearRatio) {};
 
 Drivetrain::Drivetrain(const std::array<pros::Motor, 6> &_drivetrain, pros::motor_gearset_e _gearset, float wheelCircumference, float hardwareGearRatio=1)
-	: w_topLeft(_drivetrain.at(0), false), w_middleLeft(_drivetrain.at(2), false), w_bottomLeft(_drivetrain.at(4), false), 
-	  w_topRight(_drivetrain.at(1), false), w_middleRight(_drivetrain.at(3), false), w_bottomRight(_drivetrain.at(5), false),
+	: w_topLeft(_drivetrain.at(0), false), w_middleLeft(_drivetrain.at(1), false), w_bottomLeft(_drivetrain.at(2), false), 
+	  w_topRight(_drivetrain.at(3), false), w_middleRight(_drivetrain.at(4), false), w_bottomRight(_drivetrain.at(5), false),
 	  WHEEL_CIRCUMFERENCE(wheelCircumference), GEAR_RATIO(hardwareGearRatio) {}
 
 void Drivetrain::setBrakeMode(pros::motor_brake_mode_e mode) {
@@ -88,17 +88,17 @@ void Drivetrain::moveWheels() {
 	w_bottomRight.setVelocityPercent(rightSpeed);
 }
 void Drivetrain::moveWheels(float speedLeft, float speedRight) {
-	leftSpeed = speedLeft;
-	rightSpeed = speedRight;
+	this->leftSpeed = speedLeft;
+	this->rightSpeed = speedRight;
 	moveWheels();
 }
 void Drivetrain::setSpeedFromController(const ctrlAPI::Controller &controller) {
 	if (driveMode == DrivingMode::SINGLE_JOYSTICK) {
-		leftSpeed = controller.leftAnalogYPercent - controller.leftAnalogXPercent;
-		rightSpeed = controller.leftAnalogYPercent + controller.leftAnalogXPercent;
+		this->leftSpeed = controller.leftAnalogYPercent - controller.leftAnalogXPercent;
+		this->rightSpeed = controller.leftAnalogYPercent + controller.leftAnalogXPercent;
 	} else {
-		leftSpeed = controller.rightAnalogYPercent;
-		rightSpeed = controller.leftAnalogYPercent;
+		this->leftSpeed = controller.rightAnalogYPercent;
+		this->rightSpeed = controller.leftAnalogYPercent;
 	}
 	moveWheels();
 }
@@ -107,15 +107,15 @@ void Drivetrain::brakeWheels() {
 		motor->brake();
 	}
 }
-void Drivetrain::setSpeedFromVec2(const Vec2 &vec) {
-	leftSpeed = vec.x;
-	rightSpeed = vec.y;
+void Drivetrain::setSpeedFromSpeedPair(const SpeedPair &pair) {
+	this->leftSpeed = pair.leftSpeed;
+	this->rightSpeed = pair.rightSpeed;
 }
 
 
 //| MARK: Robot
 
-Robot::Robot(std::array<DrivetrainMotor, 6> _wheels, float wheelCircumference, float hardwareGearRatio, pros::Imu _inertial)
+Robot::Robot(const std::array<DrivetrainMotor, 6> &_wheels, float wheelCircumference, float hardwareGearRatio, const pros::Imu &_inertial)
 		: drivetrain(_wheels, wheelCircumference, hardwareGearRatio), inertial(_inertial),
 		  autonController(std::make_unique<autonAPI::PID_Controller>()) {
 	autonController->_bindRobot(this);

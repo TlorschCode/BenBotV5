@@ -9,15 +9,14 @@
 
 namespace autonAPI {
 
-// Returns the left and right speed a robot's drivetrain should adopt in order to go towards a point.
-// - The left speed is the 'x' attribute and the right speed is the 'y' attribute of the returned Vec2
-Vec2 PID_Controller::getSpeedFromPID_to(Vec2 &target) {
+// Returns the left and right speed a robot's drivetrain should adopt in order to go towards a point using PID.
+SpeedPair PID_Controller::getSpeedFromPID_to(Vec2 &target) {
     //| Statics
     static float prevPosError = 0.0f;
     static float prevRotError = 0.0f;
     static float prev_pPos = 0.0f;
     static float prev_pRot = 0.0f;
-    
+
     //| Setup
     const float targetRot = degreesTill(robot->pos, target);
 
@@ -28,26 +27,27 @@ Vec2 PID_Controller::getSpeedFromPID_to(Vec2 &target) {
     iRot += pRot * iRot.weight;
     dRot = dRot.weight * (curRotError - prevRotError);
     prev_pRot = pRot.val;
-    const float PID_rot = (pRot + (iRot * iRot.weight) + (dRot * dRot.weight)).val;
+    const float PID_rot = pRot.val;//(pRot + (iRot * iRot.weight) + (dRot * dRot.weight)).val;
 
 
     //| Position
     const float curPosError = distanceBetween(robot->pos, target); 
     // PID calc
-    pPos = pPos.weight * curPosError;
+    pPos = curPosError * pPos.weight;
     iPos += pPos;
     dPos = dPos.weight * (curPosError - prevPosError);
     prev_pPos = pPos.val;
-    const float PID_pos = (pPos + (iPos * iPos.weight) + (dPos * dPos.weight)).val;
+    const float PID_pos = pPos.val;//(pPos + (iPos * iPos.weight) + (dPos * dPos.weight)).val;
 
     //| Cleanup
     prevRotError = curRotError;
     prevPosError = curPosError;
 
     //| Result
-    return Vec2{
-        PID_pos + PID_rot,
-        PID_pos - PID_rot
+    if (curRotError < 0) {}
+    return SpeedPair{
+        PID_pos - PID_rot,
+        PID_pos + PID_rot
     };
 }
 

@@ -62,6 +62,33 @@ struct Vec2 {
     constexpr inline Vec2& operator/=(const float& a) noexcept { x /= a; y /= a;    return *this; }
 
 };
+// Contains leftSpeed and rightSpeed as a pair
+struct SpeedPair {
+    float leftSpeed;
+    float rightSpeed;
+
+    constexpr SpeedPair(float _leftSpeed = 0.0f, float _rightSpeed = 0.0f) noexcept
+        : leftSpeed(_leftSpeed), rightSpeed(_rightSpeed) {}
+
+    // Vec2 <op> Vec2
+    constexpr inline SpeedPair operator+(const SpeedPair& a) const noexcept { return {leftSpeed + a.leftSpeed, rightSpeed + a.rightSpeed}; }
+    constexpr inline SpeedPair operator-(const SpeedPair& a) const noexcept { return {leftSpeed - a.leftSpeed, rightSpeed - a.rightSpeed}; }
+    constexpr inline SpeedPair operator*(const SpeedPair& a) const noexcept { return {leftSpeed * a.leftSpeed, rightSpeed * a.rightSpeed}; }
+    constexpr inline SpeedPair operator/(const SpeedPair& a) const noexcept { return {leftSpeed / a.leftSpeed, rightSpeed / a.rightSpeed}; }
+
+    // Vec2 <op> float
+    constexpr inline SpeedPair operator*(const float& a) const noexcept { return {rightSpeed * a, leftSpeed * a}; }
+    constexpr inline SpeedPair operator/(const float& a) const noexcept { return {rightSpeed / a, leftSpeed / a}; }
+
+    // Compound assignments for Vec2
+    constexpr inline SpeedPair& operator+=(const SpeedPair& a) noexcept { leftSpeed += a.leftSpeed; rightSpeed += a.rightSpeed; return *this; }
+    constexpr inline SpeedPair& operator-=(const SpeedPair& a) noexcept { leftSpeed -= a.leftSpeed; rightSpeed -= a.rightSpeed; return *this; }
+    constexpr inline SpeedPair& operator*=(const SpeedPair& a) noexcept { leftSpeed *= a.leftSpeed; rightSpeed *= a.rightSpeed; return *this; }
+    constexpr inline SpeedPair& operator/=(const SpeedPair& a) noexcept { leftSpeed /= a.leftSpeed; rightSpeed /= a.rightSpeed; return *this; }
+
+    constexpr inline SpeedPair& operator*=(const float& a) noexcept { leftSpeed *= a; rightSpeed *= a; return *this; }
+    constexpr inline SpeedPair& operator/=(const float& a) noexcept { leftSpeed /= a; rightSpeed /= a; return *this; }
+};
 
 //| MARK:  Classes
 class UnitInterval {

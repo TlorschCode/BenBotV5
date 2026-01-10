@@ -56,8 +56,6 @@ public:
 // TODO: Put motors into a struct called motors for clarity
 class Drivetrain {
 private:
-	float leftSpeed = 0;
-	float rightSpeed = 0;
 public:
 	const float WHEEL_CIRCUMFERENCE; // inches
 	const float GEAR_RATIO;
@@ -68,6 +66,8 @@ public:
 	DrivetrainMotor w_topRight;
 	DrivetrainMotor w_middleRight;
 	DrivetrainMotor w_bottomRight;
+	float leftSpeed = 0;
+	float rightSpeed = 0;
 
 	// Empty Drivetrain constructor
 	Drivetrain();
@@ -138,7 +138,7 @@ public:
 
 	// Sets the drivetrarin's leftSpeed and rightSpeed according to a Vec2.
 	// leftSpeed is set to the 'x' attribute of the Vec2, and rightSpeed is set to the 'y' attribute.
-	void setSpeedFromVec2(const Vec2 &vec);
+	void setSpeedFromSpeedPair(const SpeedPair &pair);
 
 	// Sets the brake mode of each of the wheels.
 	void setBrakeMode(pros::motor_brake_mode_e mode);
@@ -171,7 +171,7 @@ public:
 	std::unique_ptr<autonAPI::PID_Controller> autonController;
 
 	// hardwareGearRatio is the external gear ratio for the drivetrain from motor shaft rotations to actual wheel rotations. This is common for drivetrains with motors placed between wheels.
-	Robot(std::array<DrivetrainMotor, 6> _wheels, float wheelCircumference, float hardwareGearRatio, pros::Imu _inertial);
+	Robot(const std::array<DrivetrainMotor, 6> &_wheels, float wheelCircumference, float hardwareGearRatio, const pros::Imu &_inertial);
 
 	constexpr inline Robot& operator=(const Robot& _new) noexcept {
 		pos = _new.pos;
