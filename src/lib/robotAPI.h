@@ -56,6 +56,8 @@ public:
 // TODO: Put motors into a struct called motors for clarity
 class Drivetrain {
 private:
+	float leftSpeed = 0;
+	float rightSpeed = 0;
 public:
 	const float WHEEL_CIRCUMFERENCE; // inches
 	const float GEAR_RATIO;
@@ -66,8 +68,6 @@ public:
 	DrivetrainMotor w_topRight;
 	DrivetrainMotor w_middleRight;
 	DrivetrainMotor w_bottomRight;
-	float leftSpeed = 0;
-	float rightSpeed = 0;
 
 	// Empty Drivetrain constructor
 	Drivetrain();
@@ -115,6 +115,16 @@ public:
 	inline void swapDriveMode() noexcept {
 		driveMode = (driveMode == DrivingMode::SINGLE_JOYSTICK) ? DrivingMode::TANK : DrivingMode::SINGLE_JOYSTICK;
 	}
+
+	inline float getLeftSpeed()  const noexcept { return leftSpeed; }
+	inline float getRightSpeed() const noexcept { return rightSpeed; }
+
+	inline void setLeftSpeed(float amount)  noexcept { leftSpeed = amount; }
+	inline void setRightSpeed(float amount) noexcept { rightSpeed = amount; }
+
+	inline void changeLeftSpeed(float amount)  noexcept { leftSpeed += amount; }
+	inline void changeRightSpeed(float amount) noexcept { rightSpeed += amount; }
+
 	// Returns the averaged position of all left motors
 	// Return unit: the encoding unit of each motor
 	inline float getLeftMotorsPos() const {

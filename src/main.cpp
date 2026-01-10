@@ -195,15 +195,15 @@ void autonomous() {
 	while (robot.inertial.is_calibrating()) {}
 	while (robot.pos.y < 12) {
 		robot.autonController.get()->updateOdom();
-		if (robot.drivetrain.leftSpeed < 50) {
-			robot.drivetrain.moveWheels(robot.drivetrain.leftSpeed + 1, robot.drivetrain.rightSpeed + 1);
+		if (robot.drivetrain.getLeftSpeed() < 50) {
+			robot.drivetrain.moveWheels(robot.drivetrain.getLeftSpeed() + 1, robot.drivetrain.getRightSpeed() + 1);
 		}
 		wait(FRAME);
 	}
 	while (robot.pos.y < 24) {
 		robot.autonController.get()->updateOdom();
-		if (robot.drivetrain.leftSpeed > 10) {
-			robot.drivetrain.moveWheels(robot.drivetrain.leftSpeed - 0.85f, robot.drivetrain.rightSpeed - 0.85f);
+		if (robot.drivetrain.getLeftSpeed() > 10) {
+			robot.drivetrain.moveWheels(robot.drivetrain.getLeftSpeed() - 0.85f, robot.drivetrain.getRightSpeed() - 0.85f);
 		}
 		wait(FRAME);
 	}
@@ -212,8 +212,8 @@ void autonomous() {
 	robot.drivetrain.moveWheels(0, 0);
 	while (robot.pos.y > -24) {
 		robot.autonController.get()->updateOdom();
-		if (robot.drivetrain.leftSpeed > -100) {
-			robot.drivetrain.moveWheels(robot.drivetrain.leftSpeed - 2, robot.drivetrain.rightSpeed - 2);
+		if (robot.drivetrain.getLeftSpeed() > -100) {
+			robot.drivetrain.moveWheels(robot.drivetrain.getLeftSpeed() - 2, robot.drivetrain.getRightSpeed() - 2);
 		}
 		wait(FRAME);
 	}
