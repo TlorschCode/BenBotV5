@@ -153,44 +153,70 @@ void competition_initialize() {}
  */
 // MARK: Autonomous
 void autonomous() {
-	printOnScreen("AUTON!");
-	wait(100);
-	robot.drivetrain.setBrakeMode(BRAKE_MODE_HOLD);
+	initialize();
+	// printOnScreen("AUTON!");
+	// wait(100);
+	// robot.drivetrain.setBrakeMode(BRAKE_MODE_HOLD);
 
-	// Init
-	vector<Point> autonPoints = {
-		{0, 0},
-		{0, 24},
-		{12, 12},
-		{0, -24}
-	};
-	constexpr float robotCheckRadius = 10.0f;
-	Point target = autonPoints.at(0);
-	Point prevPoint = robot.pos;
-	Vec2 curTargetLoc = {0, 0};
-	Vec2 prevTargetLoc = {0, 0};
+	// // Init
+	// vector<Point> autonPoints = {
+	// 	{0, 0},
+	// 	{0, 24},
+	// 	{12, 12},
+	// 	{0, -24}
+	// };
+	// constexpr float robotCheckRadius = 10.0f;
+	// Point target = autonPoints.at(0);
+	// Point prevPoint = robot.pos;
+	// Vec2 curTargetLoc = {0, 0};
+	// Vec2 prevTargetLoc = {0, 0};
 
-	robot.drivetrain.brakeWheels();
-	for (size_t ptIdx = 0; ptIdx < autonPoints.size() - 1; ptIdx++) { // - 1 so we can have an extra point the robot doesn't visit but it aims for
-		Point &point = autonPoints.at(ptIdx);
-		while (!point.visited) {
-			curTargetLoc = robot.autonController.get()->getPurePursuitLoc(robotCheckRadius, point.pos, prevTargetLoc);
-			robot.drivetrain.setSpeedFromVec2(robot.autonController.get()->getSpeedFromPID_to(point.pos));
-			printOnScreen(distanceBetween(robot.pos, point.pos));
-			printOnScreen((distanceBetween(robot.pos, point.pos) < 2), 1);
-			printOnScreen(to_string(point.pos.x) + ", " + to_string(point.pos.y), 2);
-			// printOnScreen(robot.drivetrain.leftSpeed, 3);
-			// printOnScreen(robot.drivetrain.rightSpeed, 4);
-			printOnScreen(robot.autonController.get()->getSpeedFromPID_to(point.pos).x, 4);
-			printOnScreen(robot.autonController.get()->getSpeedFromPID_to(point.pos).y, 5);
-			// When within 2 inches of a point, mark that point as visted
-			point.visited = (distanceBetween(robot.pos, point.pos) < 2);
-			checkPauseProgram();
-			wait(FRAME);
+	// robot.drivetrain.brakeWheels();
+	// for (size_t ptIdx = 0; ptIdx < autonPoints.size() - 1; ptIdx++) { // - 1 so we can have an extra point the robot doesn't visit but it aims for
+	// 	Point &point = autonPoints.at(ptIdx);
+	// 	while (!point.visited) {
+	// 		curTargetLoc = robot.autonController.get()->getPurePursuitLoc(robotCheckRadius, point.pos, prevTargetLoc);
+	// 		robot.drivetrain.setSpeedFromVec2(robot.autonController.get()->getSpeedFromPID_to(point.pos));
+	// 		printOnScreen(distanceBetween(robot.pos, point.pos));
+	// 		printOnScreen((distanceBetween(robot.pos, point.pos) < 2), 1);
+	// 		printOnScreen(to_string(point.pos.x) + ", " + to_string(point.pos.y), 2);
+	// 		// printOnScreen(robot.drivetrain.leftSpeed, 3);
+	// 		// printOnScreen(robot.drivetrain.rightSpeed, 4);
+	// 		printOnScreen(robot.autonController.get()->getSpeedFromPID_to(point.pos).x, 4);
+	// 		printOnScreen(robot.autonController.get()->getSpeedFromPID_to(point.pos).y, 5);
+	// 		// When within 2 inches of a point, mark that point as visted
+	// 		point.visited = (distanceBetween(robot.pos, point.pos) < 2);
+	// 		checkPauseProgram();
+	// 		wait(FRAME);
+	// 	}
+	// }
+	// printOnScreen("WE DID IT!");
+	// wait(100000);
+	while (robot.inertial.is_calibrating()) {}
+	while (robot.pos.y < 12) {
+		robot.autonController.get()->updateOdom();
+		if (robot.drivetrain.leftSpeed < 50) {
+			robot.drivetrain.moveWheels(robot.drivetrain.leftSpeed + 1, robot.drivetrain.rightSpeed + 1);
 		}
+		wait(FRAME);
 	}
-	printOnScreen("WE DID IT!");
-	wait(100000);
+	while (robot.pos.y < 24) {
+		robot.autonController.get()->updateOdom();
+		if (robot.drivetrain.leftSpeed < 50) {
+			robot.drivetrain.moveWheels(robot.drivetrain.leftSpeed - 0.5, robot.drivetrain.rightSpeed - 0.5);
+		}
+		wait(FRAME);
+	}
+	robot.drivetrain.brakeWheels();
+	wait(1000);
+	robot.drivetrain.moveWheels(0, 0);
+	while (robot.pos.y > -20) {
+		robot.autonController.get()->updateOdom();
+		if (robot.drivetrain.leftSpeed > -100) {
+			robot.drivetrain.moveWheels(robot.drivetrain.leftSpeed - 1, robot.drivetrain.rightSpeed - 1);
+		}
+		wait(FRAME);
+	}
 }
 
 void brakeScoring(vector<pros::Motor*> scoringMotors) {
@@ -244,19 +270,24 @@ void scorePipeline() {
 
 // MARK: opcontrol
 void opcontrol() {
-	clear_screen();
-	initialize();
 	autonomous();
-	while (true) {
-		if (robot.drivetrain.w_topLeft.rawMotor.is_over_temp() || robot.drivetrain.w_topRight.rawMotor.is_over_temp() || robot.drivetrain.w_bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.w_bottomRight.rawMotor.is_over_temp()) break;
-		controller.updateInputData();
-		// robot.autonController->updateOdom();
-		drivePipeline();
-		scorePipeline();
-		wait(FRAME);
-	}
+	// clear_screen();
+	// bool motors_overheated = false;
+	// while (!motors_overheated) {
+	// 	for (DrivetrainMotor* motor : robot.drivetrain.getWheelsAsPtrs()) {
+	// 		if (motor->rawMotor.is_over_temp()) {
+	// 			motors_overheated = true;
+	// 		}
+	// 	}
+	// 	if (robot.drivetrain.w_topLeft.rawMotor.is_over_temp() || robot.drivetrain.w_topRight.rawMotor.is_over_temp() || robot.drivetrain.w_bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.w_bottomRight.rawMotor.is_over_temp()) break;
+	// 	controller.updateInputData();
+	// 	// robot.autonController->updateOdom();
+	// 	drivePipeline();
+	// 	scorePipeline();
+	// 	wait(FRAME);
+	// }
 	controller.rawController.rumble("...");
-	printOnScreen(to_string(robot.pos.y));
+	// printOnScreen(to_string(robot.pos.y));
 	robot.drivetrain.brakeWheels();
 	conveyor.brake();
 	intake.brake();

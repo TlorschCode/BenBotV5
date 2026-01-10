@@ -1,7 +1,7 @@
 {
   "py/object": "pros.conductor.project.Project",
   "py/state": {
-    "project_name": "BenBotV5",
+    "project_name": "AutonSkills",
     "target": "v5",
     "templates": {
       "kernel": {
@@ -254,7 +254,9 @@
         "version": "8.3.8"
       }
     },
-    "upload_options": {},
+    "upload_options": {
+      "slot": 3
+    },
     "use_early_access": false
   }
 }
