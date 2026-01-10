@@ -202,18 +202,18 @@ void autonomous() {
 	}
 	while (robot.pos.y < 24) {
 		robot.autonController.get()->updateOdom();
-		if (robot.drivetrain.leftSpeed < 50) {
-			robot.drivetrain.moveWheels(robot.drivetrain.leftSpeed - 0.5, robot.drivetrain.rightSpeed - 0.5);
+		if (robot.drivetrain.leftSpeed > 10) {
+			robot.drivetrain.moveWheels(robot.drivetrain.leftSpeed - 0.85f, robot.drivetrain.rightSpeed - 0.85f);
 		}
 		wait(FRAME);
 	}
 	robot.drivetrain.brakeWheels();
 	wait(1000);
 	robot.drivetrain.moveWheels(0, 0);
-	while (robot.pos.y > -20) {
+	while (robot.pos.y > -24) {
 		robot.autonController.get()->updateOdom();
 		if (robot.drivetrain.leftSpeed > -100) {
-			robot.drivetrain.moveWheels(robot.drivetrain.leftSpeed - 1, robot.drivetrain.rightSpeed - 1);
+			robot.drivetrain.moveWheels(robot.drivetrain.leftSpeed - 2, robot.drivetrain.rightSpeed - 2);
 		}
 		wait(FRAME);
 	}
