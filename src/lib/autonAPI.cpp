@@ -10,7 +10,8 @@
 namespace autonAPI {
 
 // Returns the left and right speed a robot's drivetrain should adopt in order to go towards a point using PID.
-SpeedPair PID_Controller::getSpeedFromPID_to(Vec2 &target) {
+// (Uses dot product to control rotation PID)
+SpeedPair PID_Controller::getSpeedFromPID_to(Vec2& target) {
     //| Statics
     static float prevPosError = 0;
     static float prevRotError = 0;
@@ -20,10 +21,12 @@ SpeedPair PID_Controller::getSpeedFromPID_to(Vec2 &target) {
 
     //| Setup
     const float targetRot = degreesTill(robot->pos, target);
+    const Vec2 targRotVec = deg2vec(targetRot); // The direction as a vec, using sin and cos to convert it to x and y (unit circle style)
+    const Vec2 headingVec = deg2vec(robot->heading_deg);
 
-    // TODO: Set up dot product to avoid turning the wrong way if the values are like: targ = 30 & cur=270
+    // TODO: Set up dot product and cross product math to avoid turning the wrong way if the values are like: targ = 30 & cur=270
     //| Rotation
-    const float curRotError = targetRot - robot->heading;
+    const float curRotError = rad2deg(std::atan2(crossProd(headingVec, target), dotProd(robot->pos, target))); // from -pi to pi
     // PID calc
     pRot = (targetRot - pRot) * pRot.weight;
     iRot += pRot * iRot.weight;
@@ -87,7 +90,7 @@ Vec2 PID_Controller::getPurePursuitLoc(const float &checkRadius, const Vec2 &tar
 float PID_Controller::updateHeadingAndOdom() {
     uint32_t now = pros::millis();
 
-    robot->heading = truncate(robot->inertial.get_rotation()); // Cutoff at 2 decimal places because inertial sensor is innacurate
+    robot->heading_deg = truncate(robot->inertial.get_rotation()); // Cutoff at 2 decimal places because inertial sensor is innacurate
 
     float leftMotorsPos = robot->drivetrain.getLeftMotorsPos();
     float rightMotorsPos = robot->drivetrain.getRightMotorsPos();
@@ -96,8 +99,8 @@ float PID_Controller::updateHeadingAndOdom() {
     float wheelRotDelta = averageWheelRot - prev_allWheelRot;
     prev_allWheelRot = averageWheelRot;
 
-    robot->pos.x += ((wheelRotDelta / 360.0f) * robot->drivetrain.GEAR_RATIO * robot->drivetrain.WHEEL_CIRCUMFERENCE) * sin(deg2rad(robot->heading));
-    robot->pos.y += ((wheelRotDelta / 360.0f) * robot->drivetrain.GEAR_RATIO * robot->drivetrain.WHEEL_CIRCUMFERENCE) * cos(deg2rad(robot->heading));
+    robot->pos.x += ((wheelRotDelta / 360.0f) * robot->drivetrain.GEAR_RATIO * robot->drivetrain.WHEEL_CIRCUMFERENCE) * sin(deg2rad(robot->heading_deg));
+    robot->pos.y += ((wheelRotDelta / 360.0f) * robot->drivetrain.GEAR_RATIO * robot->drivetrain.WHEEL_CIRCUMFERENCE) * cos(deg2rad(robot->heading_deg));
     return (wheelRotDelta / 360.0f); // Return this for debugging purposes
 }
 

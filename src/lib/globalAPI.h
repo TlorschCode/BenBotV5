@@ -244,12 +244,12 @@ constexpr inline W_float operator/(float a, const W_float& b) noexcept { return 
 //| MARK: Utilities
 
 // Returns degrees -> radians
-inline double deg2rad(float degrees) {
+inline double deg2rad(float degrees) noexcept {
 	return degrees * (PI / 180);
 }
 
 // Returns radians -> degrees
-inline double rad2deg(double radians) {
+inline double rad2deg(double radians) noexcept {
 	return radians * (180 / PI);
 }
 
@@ -259,7 +259,7 @@ inline double truncate(double num, int cutoff = 2) {
 }
 
 // Returns the sign of the input
-inline int sign(float input) {
+inline int sign(float input) noexcept {
 	return (input >= 0) ? 1 : -1;
 }
 
@@ -284,8 +284,20 @@ inline double distanceBetween(const Vec2& pos1, const Vec2& pos2) {
 }
 
 // Returns dot product of two vectors
-inline float dot(const Vec2& vec1, const Vec2& vec2) {
+inline float dotProd(const Vec2& vec1, const Vec2& vec2) noexcept {
     return (vec1.x * vec2.x) + (vec1.y * vec2.y);
+}
+
+inline float crossProd(const Vec2& vec1, const Vec2& vec2) noexcept {
+    return (vec1.x * vec2.y) - (vec2.x * vec1.y);
+}
+
+inline Vec2 rad2vec(float angleRad) {
+    return Vec2{ std::cos(angleRad), std::sin(angleRad) };
+}
+
+inline Vec2 deg2vec(float angleDeg) {
+    return Vec2{ std::cos(deg2rad(angleDeg)), std::sin(deg2rad(angleDeg)) };
 }
 
 

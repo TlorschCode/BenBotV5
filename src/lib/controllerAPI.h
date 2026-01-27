@@ -58,29 +58,18 @@ constexpr inline Button operator*(Button lhs, Button rhs) noexcept {
 constexpr inline Button operator/(Button lhs, Button rhs) noexcept {
 	return static_cast<Button>(btn_to_u16(lhs) / btn_to_u16(rhs));
 }
-constexpr inline Button operator%(Button lhs, Button rhs) noexcept {
-	return static_cast<Button>(btn_to_u16(lhs) % btn_to_u16(rhs));
-}
 constexpr inline Button& operator+=(Button& lhs, Button rhs) noexcept { return lhs = lhs + rhs; }
 constexpr inline Button& operator-=(Button& lhs, Button rhs) noexcept { return lhs = lhs - rhs; }
 constexpr inline Button& operator*=(Button& lhs, Button rhs) noexcept { return lhs = lhs * rhs; }
 constexpr inline Button& operator/=(Button& lhs, Button rhs) noexcept { return lhs = lhs / rhs; }
-constexpr inline Button& operator%=(Button& lhs, Button rhs) noexcept { return lhs = lhs % rhs; }
 constexpr inline Button operator+(Button lhs, uint16_t rhs) noexcept { return static_cast<Button>(btn_to_u16(lhs) + rhs); }
-constexpr inline Button operator+(uint16_t lhs, Button rhs) noexcept { return static_cast<Button>(lhs + btn_to_u16(rhs)); }
 constexpr inline Button operator-(Button lhs, uint16_t rhs) noexcept { return static_cast<Button>(btn_to_u16(lhs) - rhs); }
-constexpr inline Button operator-(uint16_t lhs, Button rhs) noexcept { return static_cast<Button>(lhs - btn_to_u16(rhs)); }
 constexpr inline Button operator*(Button lhs, uint16_t rhs) noexcept { return static_cast<Button>(btn_to_u16(lhs) * rhs); }
-constexpr inline Button operator*(uint16_t lhs, Button rhs) noexcept { return static_cast<Button>(lhs * btn_to_u16(rhs)); }
 constexpr inline Button operator/(Button lhs, uint16_t rhs) noexcept { return static_cast<Button>(btn_to_u16(lhs) / rhs); }
-constexpr inline Button operator/(uint16_t lhs, Button rhs) noexcept { return static_cast<Button>(lhs / btn_to_u16(rhs)); }
-constexpr inline Button operator%(Button lhs, uint16_t rhs) noexcept { return static_cast<Button>(btn_to_u16(lhs) % rhs); }
-constexpr inline Button operator%(uint16_t lhs, Button rhs) noexcept { return static_cast<Button>(lhs % btn_to_u16(rhs)); }
 constexpr inline Button& operator+=(Button& lhs, uint16_t rhs) noexcept { return lhs = lhs + rhs; }
 constexpr inline Button& operator-=(Button& lhs, uint16_t rhs) noexcept { return lhs = lhs - rhs; }
 constexpr inline Button& operator*=(Button& lhs, uint16_t rhs) noexcept { return lhs = lhs * rhs; }
 constexpr inline Button& operator/=(Button& lhs, uint16_t rhs) noexcept { return lhs = lhs / rhs; }
-constexpr inline Button& operator%=(Button& lhs, uint16_t rhs) noexcept { return lhs = lhs % rhs; }
 constexpr inline bool operator==(Button lhs, Button rhs) noexcept { return btn_to_u16(lhs) == btn_to_u16(rhs); }
 constexpr inline bool operator!=(Button lhs, Button rhs) noexcept { return btn_to_u16(lhs) != btn_to_u16(rhs); }
 constexpr inline bool operator<(Button lhs, Button rhs)  noexcept { return btn_to_u16(lhs) <  btn_to_u16(rhs); }

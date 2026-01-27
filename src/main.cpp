@@ -1,4 +1,5 @@
 #include "lib/common_includes.h"
+#include "pros/misc.h"
 #include <fstream>
 #include <string>
 #include <iostream>
@@ -17,7 +18,6 @@ constexpr pros::motor_brake_mode_e BRAKE_MODE_HOLD = pros::motor_brake_mode_e::E
 constexpr pros::motor_brake_mode_e BRAKE_MODE_COAST = pros::motor_brake_mode_e::E_MOTOR_BRAKE_COAST;
 constexpr pros::motor_brake_mode_e BRAKE_MODE_INVALID = pros::motor_brake_mode_e::E_MOTOR_BRAKE_INVALID;
 
-using namespace std;
 using namespace ctrlAPI;
 using namespace robotAPI;
 
@@ -62,7 +62,7 @@ inline Robot init_robot() {
 	DrivetrainMotor topRight(1, true, pros::v5::MotorGearset::blue);    // Reverse
 	DrivetrainMotor middleRight(2, true, pros::v5::MotorGearset::blue); // Reverse
 	DrivetrainMotor bottomRight(3, false, pros::v5::MotorGearset::blue);// Normal
-	array<DrivetrainMotor, 6> drivetrain = {
+	std::array<DrivetrainMotor, 6> drivetrain = {
 		topLeft,
 		middleLeft,
 		bottomLeft,
@@ -73,7 +73,11 @@ inline Robot init_robot() {
 	return Robot(drivetrain, 8.639379f, 0.75f, inertial);
 }
 
+// MARK: Robot
 Robot robot = init_robot();
+
+//TODO: Make robot atomic, pos, and inertial atomimc to prevent race conditions (we have an async method running auton, but that is accessing inertial, pos, and heading)
+
 
 
 //| NON-DEFAULT FUNCTIONS |//
@@ -265,7 +269,7 @@ void autonomous() {
 	robot.drivetrain.brakeWheels();
 	// Original auton
 	// Init
-	vector<Point> autonPoints = {
+	std::vector<Point> autonPoints = {
 		{0, 0},
 		{0, 24},
 		{12, 12},
@@ -284,7 +288,7 @@ void autonomous() {
 			robot.drivetrain.setSpeedFromSpeedPair(robot.autonController.load().get()->getSpeedFromPID_to(point.pos));
 			printOnScreen(distanceBetween(robot.pos, point.pos));
 			printOnScreen((distanceBetween(robot.pos, point.pos) < 2), 1);
-			printOnScreen(to_string(point.pos.x) + ", " + to_string(point.pos.y), 2);
+			printOnScreen(std::to_string(point.pos.x) + ", " + std::to_string(point.pos.y), 2);
 			// printOnScreen(robot.drivetrain.leftSpeed, 3);
 			// printOnScreen(robot.drivetrain.rightSpeed, 4);
 			printOnScreen(robot.autonController.load().get()->getSpeedFromPID_to(point.pos).leftSpeed, 4);
@@ -300,7 +304,7 @@ void autonomous() {
 	wait(100000);
 }
 
-void brakeScoring(vector<pros::Motor*> scoringMotors) {
+void brakeScoring(std::vector<pros::Motor*> scoringMotors) {
 	for (int i = 0; i < scoringMotors.size(); i++) {
 		scoringMotors.at(i)->brake();
 	}

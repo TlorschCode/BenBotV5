@@ -157,6 +157,8 @@ public:
 	void setSpeedFromController(const ctrlAPI::Controller &controller);
 };
 
+// Struct for heading which forces the radian and degree values to remain synchronized
+
 // MARK: Robot
 // A container for a drivetrain, an auton controlller, and various other parts.
 // pos: position of the robot
@@ -164,7 +166,7 @@ public:
 class Robot {
 public:
 	Vec2 pos = {0, 0};
-	float heading = 0;
+	float heading_deg = 0;
 	Drivetrain drivetrain;
 	pros::Imu inertial;
 	std::atomic<std::shared_ptr<autonAPI::PID_Controller>> autonController;
@@ -175,7 +177,7 @@ public:
 
 	constexpr inline Robot& operator=(const Robot& _new) noexcept {
 		pos = _new.pos;
-		heading = _new.heading;
+		heading_deg = _new.heading_deg;
 		drivetrain = _new.drivetrain;
 		return *this;
 	}
