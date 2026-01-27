@@ -10,27 +10,10 @@ struct W_Vec2;
 
 
 
+
 //| MARK: Constants
 constexpr double PI = 3.14159265358979323846;
 constexpr float FRAME = {10}; // Frame time
-
-
-//| MARK: Functions
-template <typename T>
-void printOnScreen(const T& input, int row = 0) {
-    std::string printtext;
-    if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, const char*>) {
-        // Handle string and C-style string types
-        printtext = input;
-    } else {
-        // Handle other types using stringstream
-        std::stringstream ss;
-        ss << input;
-        printtext = ss.str();
-    }
-    pros::lcd::set_text(row, printtext);
-}
-
 
 
 
@@ -259,35 +242,65 @@ constexpr inline W_float operator/(float a, const W_float& b) noexcept { return 
 
 
 //| MARK: Utilities
-inline double toRadians(float degrees) {
+
+// Returns degrees -> radians
+inline double deg2rad(float degrees) {
 	return degrees * (PI / 180);
 }
 
-inline double toDegrees(double radians) {
+// Returns radians -> degrees
+inline double rad2deg(double radians) {
 	return radians * (180 / PI);
 }
 
+// Truncates a value at cutoff decimal places. (Default = 2)
 inline double truncate(double num, int cutoff = 2) {
 	return std::floor(num * std::pow(10, cutoff)) / std::pow(10, cutoff);
 }
 
-inline int sign(float &input) {
+// Returns the sign of the input
+inline int sign(float input) {
 	return (input >= 0) ? 1 : -1;
 }
 
-inline double map_value(double &input, double &input_start, double &input_end, double &output_start, double &output_end) {
+// Maps a value between a range
+inline double map_value(double input, double input_start, double input_end, double output_start, double output_end) {
     return output_start + (output_end - output_start) * ((input - input_start) / (input_end - input_start));
 }
 
-inline float degreesTill(Vec2 &from, Vec2 &to) {
-	return toDegrees(std::atan2(to.y - from.y, to.x - from.x));
+// Returns the degrees between two positions
+inline float degreesTill(const Vec2& from, const Vec2& to) {
+	return rad2deg(std::atan2(to.y - from.y, to.x - from.x));
 }
 
-inline float radiansTill(Vec2 &from, Vec2 &to) {
+// Returns the radians between two positions
+inline float radiansTill(const Vec2& from, const Vec2& to) {
 	return std::atan2(to.y - from.y, to.x - from.x);
 }
 
-// Returns in the same unit that was passed into it
-inline double distanceBetween(const Vec2 &pos1, const Vec2 &pos2) {
+// Returns in the same length unit that is stored in each Vec2 (mismatch leads to mathematically incorrect results)
+inline double distanceBetween(const Vec2& pos1, const Vec2& pos2) {
     return std::sqrt((std::pow(pos2.x - pos1.x, 2) + std::pow(pos2.y - pos1.y, 2)));
+}
+
+// Returns dot product of two vectors
+inline float dot(const Vec2& vec1, const Vec2& vec2) {
+    return (vec1.x * vec2.x) + (vec1.y * vec2.y);
+}
+
+
+//| MARK: QOL Funcs 
+template <typename T>
+void printOnScreen(const T& input, int row = 0) {
+    std::string printtext;
+    if constexpr (std::is_same_v<T, std::string> || std::is_same_v<T, const char*>) {
+        // Handle string and C-style string types
+        printtext = input;
+    } else {
+        // Handle other types using stringstream
+        std::stringstream ss;
+        ss << input;
+        printtext = ss.str();
+    }
+    pros::lcd::set_text(row, printtext);
 }

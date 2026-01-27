@@ -8,6 +8,9 @@
 #include <array>
 #include <tuple>
 #include <vector>
+#include <thread>
+#include <atomic>
+
 
 constexpr pros::motor_brake_mode_e BRAKE_MODE_BRAKE = pros::motor_brake_mode_e::E_MOTOR_BRAKE_BRAKE;
 constexpr pros::motor_brake_mode_e BRAKE_MODE_HOLD = pros::motor_brake_mode_e::E_MOTOR_BRAKE_HOLD;
@@ -17,6 +20,10 @@ constexpr pros::motor_brake_mode_e BRAKE_MODE_INVALID = pros::motor_brake_mode_e
 using namespace std;
 using namespace ctrlAPI;
 using namespace robotAPI;
+
+std::atomic<bool> running_program(true);
+
+pros::Task* odomThread = nullptr;
 
 // MARK: Hardware Init
 Controller controller(pros::Controller(pros::E_CONTROLLER_MASTER));
@@ -98,6 +105,14 @@ inline bool _otherBitsOn(const uint32_t &itm, const uint32_t &mask) {
 
 //| RUNTIME FUNCTIONS:
 
+//MARK: Thread
+void thread_UpdateOdom() {
+	while (running_program.load()) {
+		robot.autonController.load().get()->updateHeadingAndOdom();
+		wait(FRAME);
+	}
+}
+
 void checkPauseProgram() { /// REMOVE THIS FUNCTION FOR FINAL COMPETITION
 	static bool isPaused = false;
 	if (controller.getNewPress(Button::A)) {
@@ -116,7 +131,11 @@ void initialize() {
 	init_robot();
 	pros::lcd::initialize();
 	robot.inertial.reset();
-	wait(1000); // Wait for inertial to calibrate
+	while (robot.inertial.is_calibrating()) {
+		wait(FRAME);
+	}
+	// MARK: Thread
+	odomThread = new pros::Task(thread_UpdateOdom);
 }
 
 // MARK-: Disabled
@@ -140,6 +159,94 @@ void disabled() {}
 void competition_initialize() {}
 
 
+//| RUDIMENTARY
+void skillsAuton() {
+	// Skills auton
+	while (robot.inertial.is_calibrating()) {}
+	while (robot.pos.y < 12) {
+		
+		if (robot.drivetrain.leftSpeed < 50) {
+			// robot.drivetrain.moveWheels(robot.drivetrain.getLeftSpeed() + 1, robot.drivetrain.getRightSpeed() + 1);
+			robot.drivetrain.leftSpeed += 1;
+			robot.drivetrain.rightSpeed += 1;
+		}
+		robot.drivetrain.moveWheels();
+		wait(FRAME);
+	}
+	while (robot.pos.y < 24) {
+		
+		if (robot.drivetrain.leftSpeed > 10) {
+			// robot.drivetrain.moveWheels(robot.drivetrain.getLeftSpeed() - 0.85f, robot.drivetrain.getRightSpeed() - 0.85f);
+			robot.drivetrain.leftSpeed -= 0.85f;
+			robot.drivetrain.rightSpeed -= 0.85f;
+		}
+		robot.drivetrain.moveWheels();
+		wait(FRAME);
+	}
+	robot.drivetrain.brakeWheels();
+	wait(1000);
+	robot.drivetrain.moveWheels(0, 0);
+	while (robot.pos.y > -24) {
+		
+		if (robot.drivetrain.leftSpeed > -100) {
+			// robot.drivetrain.moveWheels(robot.drivetrain.getLeftSpeed() - 2, robot.drivetrain.getRightSpeed() - 2);
+			robot.drivetrain.leftSpeed -= 2;
+			robot.drivetrain.rightSpeed -= 2;
+		}
+		robot.drivetrain.moveWheels();
+		wait(FRAME);
+	}
+}
+
+//| RUDIMENTARY
+void quickAuton() {
+	robot.drivetrain.setBrakeMode(BRAKE_MODE_HOLD);
+	// Score 3 points auton
+	while (robot.pos.y < 9) {
+		if (robot.drivetrain.leftSpeed < 50) {
+			robot.drivetrain.leftSpeed += 0.85f;
+			robot.drivetrain.rightSpeed += 1;
+		}
+		robot.drivetrain.moveWheels();
+	}
+	robot.drivetrain.brakeWheels();
+	wait(100);
+	while (robot.pos.y < 18) {
+		if (robot.drivetrain.leftSpeed > 10) {
+			robot.drivetrain.leftSpeed -= 1;
+			robot.drivetrain.rightSpeed -= 1;
+		}
+		robot.drivetrain.moveWheels();
+	}
+	robot.drivetrain.brakeWheels();
+	wait(100);
+	while (robot.inertial.get_heading() < 130) {
+		robot.drivetrain.moveWheels(30, -30);
+	}
+	robot.drivetrain.brakeWheels();
+	wait(100);
+	while (robot.pos.x < 40 && robot.pos.y > 12) {
+		if (robot.drivetrain.leftSpeed < 50) {
+			robot.drivetrain.leftSpeed += 1;
+			robot.drivetrain.rightSpeed += 1;
+		}
+		robot.drivetrain.moveWheels();
+	}
+	robot.drivetrain.brakeWheels();
+	wait(100);
+	while (robot.inertial.get_heading() > 0) {
+		robot.drivetrain.moveWheels(-30, 30);
+	}
+	while (robot.pos.y < 18) {
+		if (robot.drivetrain.leftSpeed < 50) {
+			robot.drivetrain.leftSpeed += 1;
+			robot.drivetrain.rightSpeed += 1;
+		}
+	}
+	conveyor.move_velocity(200);
+	bandRotatorBottom.move_velocity(200);
+}
+
 /**
  * Runs the user autonomous code. This function will be started in its own task
  * with the default priority and stack size whenever the robot is enabled via
@@ -154,10 +261,9 @@ void competition_initialize() {}
 // MARK: Autonomous
 void autonomous() {
 	printOnScreen("AUTON!");
-
-	// Original auton
 	wait(100);
-	robot.drivetrain.setBrakeMode(BRAKE_MODE_HOLD);
+	robot.drivetrain.brakeWheels();
+	// Original auton
 	// Init
 	vector<Point> autonPoints = {
 		{0, 0},
@@ -174,15 +280,15 @@ void autonomous() {
 	for (size_t ptIdx = 0; ptIdx < autonPoints.size() - 1; ptIdx++) { // - 1 so we can have an extra point the robot doesn't visit but it aims for
 		Point &point = autonPoints.at(ptIdx);
 		while (!point.visited) {
-			curTargetLoc = robot.autonController.get()->getPurePursuitLoc(robotCheckRadius, point.pos, prevTargetLoc);
-			robot.drivetrain.setSpeedFromSpeedPair(robot.autonController.get()->getSpeedFromPID_to(point.pos));
+			curTargetLoc = robot.autonController.load().get()->getPurePursuitLoc(robotCheckRadius, point.pos, prevTargetLoc);
+			robot.drivetrain.setSpeedFromSpeedPair(robot.autonController.load().get()->getSpeedFromPID_to(point.pos));
 			printOnScreen(distanceBetween(robot.pos, point.pos));
 			printOnScreen((distanceBetween(robot.pos, point.pos) < 2), 1);
 			printOnScreen(to_string(point.pos.x) + ", " + to_string(point.pos.y), 2);
 			// printOnScreen(robot.drivetrain.leftSpeed, 3);
 			// printOnScreen(robot.drivetrain.rightSpeed, 4);
-			printOnScreen(robot.autonController.get()->getSpeedFromPID_to(point.pos).leftSpeed, 4);
-			printOnScreen(robot.autonController.get()->getSpeedFromPID_to(point.pos).rightSpeed, 5);
+			printOnScreen(robot.autonController.load().get()->getSpeedFromPID_to(point.pos).leftSpeed, 4);
+			printOnScreen(robot.autonController.load().get()->getSpeedFromPID_to(point.pos).rightSpeed, 5);
 			// When within 2 inches of a point, mark that point as visted
 			point.visited = (distanceBetween(robot.pos, point.pos) < 2);
 			robot.drivetrain.moveWheels();
@@ -192,42 +298,6 @@ void autonomous() {
 	}
 	printOnScreen("WE DID IT!");
 	wait(100000);
-	
-	// Skills auton (rudimentary)
-	// while (robot.inertial.is_calibrating()) {}
-	// while (robot.pos.y < 12) {
-	// 	robot.autonController.get()->updateOdom();
-	// 	if (robot.drivetrain.leftSpeed < 50) {
-	// 		// robot.drivetrain.moveWheels(robot.drivetrain.getLeftSpeed() + 1, robot.drivetrain.getRightSpeed() + 1);
-	// 		robot.drivetrain.leftSpeed += 1;
-	// 		robot.drivetrain.rightSpeed += 1;
-	// 	}
-	// 	robot.drivetrain.moveWheels();
-	// 	wait(FRAME);
-	// }
-	// while (robot.pos.y < 24) {
-	// 	robot.autonController.get()->updateOdom();
-	// 	if (robot.drivetrain.leftSpeed > 10) {
-	// 		// robot.drivetrain.moveWheels(robot.drivetrain.getLeftSpeed() - 0.85f, robot.drivetrain.getRightSpeed() - 0.85f);
-	// 		robot.drivetrain.leftSpeed -= 0.85f;
-	// 		robot.drivetrain.rightSpeed -= 0.85f;
-	// 	}
-	// 	robot.drivetrain.moveWheels();
-	// 	wait(FRAME);
-	// }
-	// robot.drivetrain.brakeWheels();
-	// wait(1000);
-	// robot.drivetrain.moveWheels(0, 0);
-	// while (robot.pos.y > -24) {
-	// 	robot.autonController.get()->updateOdom();
-	// 	if (robot.drivetrain.leftSpeed > -100) {
-	// 		// robot.drivetrain.moveWheels(robot.drivetrain.getLeftSpeed() - 2, robot.drivetrain.getRightSpeed() - 2);
-	// 		robot.drivetrain.leftSpeed -= 2;
-	// 		robot.drivetrain.rightSpeed -= 2;
-	// 	}
-	// 	robot.drivetrain.moveWheels();
-	// 	wait(FRAME);
-	// }
 }
 
 void brakeScoring(vector<pros::Motor*> scoringMotors) {
@@ -281,7 +351,6 @@ void scorePipeline() {
 
 // MARK: opcontrol
 void opcontrol() {
-	initialize();
 	autonomous();
 	// clear_screen();
 	// bool motors_overheated = false;
@@ -293,7 +362,7 @@ void opcontrol() {
 	// 	}
 	// 	if (robot.drivetrain.w_topLeft.rawMotor.is_over_temp() || robot.drivetrain.w_topRight.rawMotor.is_over_temp() || robot.drivetrain.w_bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.w_bottomRight.rawMotor.is_over_temp()) break;
 	// 	controller.updateInputData();
-	// 	// robot.autonController->updateOdom();
+	// 	// robot.autonController->updateHeadingAndOdom();
 	// 	drivePipeline();
 	// 	scorePipeline();
 	// 	wait(FRAME);
@@ -305,4 +374,8 @@ void opcontrol() {
 	intake.brake();
 	bandRotatorBottom.brake();
 	bandRotatorTop.brake();
+	running_program.store(false);
+	odomThread->remove();
+	delete odomThread;
+	odomThread = nullptr;
 }

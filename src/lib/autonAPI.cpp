@@ -12,14 +12,16 @@ namespace autonAPI {
 // Returns the left and right speed a robot's drivetrain should adopt in order to go towards a point using PID.
 SpeedPair PID_Controller::getSpeedFromPID_to(Vec2 &target) {
     //| Statics
-    static float prevPosError = 0.0f;
-    static float prevRotError = 0.0f;
-    static float prev_pPos = 0.0f;
-    static float prev_pRot = 0.0f;
+    static float prevPosError = 0;
+    static float prevRotError = 0;
+    static float prev_pPos = 0;
+    static float prev_pRot = 0;
+    
 
     //| Setup
     const float targetRot = degreesTill(robot->pos, target);
 
+    // TODO: Set up dot product to avoid turning the wrong way if the values are like: targ = 30 & cur=270
     //| Rotation
     const float curRotError = targetRot - robot->heading;
     // PID calc
@@ -60,7 +62,7 @@ Vec2 PID_Controller::getPurePursuitLoc(const float &checkRadius, const Vec2 &tar
     float twoceCircleOffset = 2 * (((prevTarget.x - robot->pos.x) * (target.x - prevTarget.x)) + ((prevTarget.y - robot->pos.y) * (target.y - prevTarget.y)));
     float prevTarCurPosDist = (std::pow(prevTarget.x - robot->pos.x, 2) + std::pow(prevTarget.y - robot->pos.y, 2)) - std::pow(checkRadius, 2);
     float discriminant = std::pow(twoceCircleOffset, 2) - (4 * dotProduct * prevTarCurPosDist);
-    
+
 
     if (discriminant >= 0) {
         const float intersectRatio1 = (-twoceCircleOffset + sqrt(discriminant)) / (2 * dotProduct);
@@ -82,7 +84,7 @@ Vec2 PID_Controller::getPurePursuitLoc(const float &checkRadius, const Vec2 &tar
 }
 
 
-float PID_Controller::updateOdom() {
+float PID_Controller::updateHeadingAndOdom() {
     uint32_t now = pros::millis();
 
     robot->heading = truncate(robot->inertial.get_rotation()); // Cutoff at 2 decimal places because inertial sensor is innacurate
@@ -94,8 +96,8 @@ float PID_Controller::updateOdom() {
     float wheelRotDelta = averageWheelRot - prev_allWheelRot;
     prev_allWheelRot = averageWheelRot;
 
-    robot->pos.x += ((wheelRotDelta / 360.0f) * robot->drivetrain.GEAR_RATIO * robot->drivetrain.WHEEL_CIRCUMFERENCE) * sin(toRadians(robot->heading));
-    robot->pos.y += ((wheelRotDelta / 360.0f) * robot->drivetrain.GEAR_RATIO * robot->drivetrain.WHEEL_CIRCUMFERENCE) * cos(toRadians(robot->heading));
+    robot->pos.x += ((wheelRotDelta / 360.0f) * robot->drivetrain.GEAR_RATIO * robot->drivetrain.WHEEL_CIRCUMFERENCE) * sin(deg2rad(robot->heading));
+    robot->pos.y += ((wheelRotDelta / 360.0f) * robot->drivetrain.GEAR_RATIO * robot->drivetrain.WHEEL_CIRCUMFERENCE) * cos(deg2rad(robot->heading));
     return (wheelRotDelta / 360.0f); // Return this for debugging purposes
 }
 

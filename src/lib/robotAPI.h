@@ -9,7 +9,6 @@ namespace autonAPI {
 }
 
 namespace robotAPI {
-
 // MARK: Forward declarations
 class DrivetrainMotor;
 class Robot;
@@ -168,7 +167,8 @@ public:
 	float heading = 0;
 	Drivetrain drivetrain;
 	pros::Imu inertial;
-	std::unique_ptr<autonAPI::PID_Controller> autonController;
+	std::atomic<std::shared_ptr<autonAPI::PID_Controller>> autonController;
+
 
 	// hardwareGearRatio is the external gear ratio for the drivetrain from motor shaft rotations to actual wheel rotations. This is common for drivetrains with motors placed between wheels.
 	Robot(const std::array<DrivetrainMotor, 6> &_wheels, float wheelCircumference, float hardwareGearRatio, const pros::Imu &_inertial);

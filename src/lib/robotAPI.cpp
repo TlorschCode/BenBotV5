@@ -1,10 +1,10 @@
 #include "robotAPI.h"
 #include "autonAPI.h"
 #include <memory>
+#include <mutex>
 #include <cmath>  // for atan2, cos, sin, abs
 
 using namespace robotAPI;
-
 //| MARK: DrivetrainMotor
 DrivetrainMotor::DrivetrainMotor()
 			: rawMotor(pros::Motor(1, pros::v5::MotorGearset::green)), reversed(false), RPM(0) {
@@ -106,6 +106,8 @@ void Drivetrain::brakeWheels() {
 	for (DrivetrainMotor* motor : getWheelsAsPtrs()) {
 		motor->brake();
 	}
+	this->leftSpeed = 0;
+	this->rightSpeed = 0;
 }
 void Drivetrain::setSpeedFromSpeedPair(const SpeedPair &pair) {
 	this->leftSpeed = pair.leftSpeed;
@@ -118,5 +120,5 @@ void Drivetrain::setSpeedFromSpeedPair(const SpeedPair &pair) {
 Robot::Robot(const std::array<DrivetrainMotor, 6> &_wheels, float wheelCircumference, float hardwareGearRatio, const pros::Imu &_inertial)
 		: drivetrain(_wheels, wheelCircumference, hardwareGearRatio), inertial(_inertial),
 		  autonController(std::make_unique<autonAPI::PID_Controller>()) {
-	autonController->_bindRobot(this);
+	autonController.load()->_bindRobot(this);
 }
