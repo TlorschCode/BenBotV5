@@ -26,9 +26,9 @@ SpeedPair PID_Controller::getSpeedFromPID_to(Vec2& target) {
 
     // TODO: Set up dot product and cross product math to avoid turning the wrong way if the values are like: targ = 30 & cur=270
     //| Rotation
-    const float curRotError = rad2deg(std::atan2(crossProd(headingVec, target), dotProd(robot->pos, target))); // from -pi to pi
+    const float curRotError = rad2deg(std::atan2(crossProd(headingVec, targRotVec), dotProd(headingVec, targRotVec))); // from -180 to 180 (radians is -pi to pi)
     // PID calc
-    pRot = (targetRot - pRot) * pRot.weight;
+    pRot = curRotError * pRot.weight;
     iRot += pRot * iRot.weight;
     dRot = dRot.weight * (curRotError - prevRotError);
     prev_pRot = pRot.val;
@@ -51,36 +51,55 @@ SpeedPair PID_Controller::getSpeedFromPID_to(Vec2& target) {
     //| Result
     if (curRotError < 0) {}
     return SpeedPair{
-        PID_pos - PID_rot,
-        PID_pos + PID_rot
+        (pPos - pRot).val,
+        (pPos + pRot).val
     };
 }
 
 
-Vec2 PID_Controller::getPurePursuitLoc(const float &checkRadius, const Vec2 &target, const Vec2 &prevTarget) {
-    Vec2 minTarget = {std::min(target.x, prevTarget.x), std::min(target.y, prevTarget.y)};
-    Vec2 maxTarget = {std::max(target.x, prevTarget.x), std::max(target.y, prevTarget.y)};
+Vec2 PID_Controller::getPurePursuitLoc(const float &checkRadius, const Vec2 &target) {
+    static Vec2 lastValidLookaheadPoint{0, 0};
+    Vec2 minTarget = {std::min(target.x, lastValidLookaheadPoint.x), std::min(target.y, lastValidLookaheadPoint.y)};
+    Vec2 maxTarget = {std::max(target.x, lastValidLookaheadPoint.x), std::max(target.y, lastValidLookaheadPoint.y)};
 
-    float dotProduct = std::pow(target.x - prevTarget.x, 2) + std::pow(target.y - prevTarget.y, 2);
-    float twoceCircleOffset = 2 * (((prevTarget.x - robot->pos.x) * (target.x - prevTarget.x)) + ((prevTarget.y - robot->pos.y) * (target.y - prevTarget.y)));
-    float prevTarCurPosDist = (std::pow(prevTarget.x - robot->pos.x, 2) + std::pow(prevTarget.y - robot->pos.y, 2)) - std::pow(checkRadius, 2);
-    float discriminant = std::pow(twoceCircleOffset, 2) - (4 * dotProduct * prevTarCurPosDist);
+    double selfDotProduct = std::pow(target.x - lastValidLookaheadPoint.x, 2) + std::pow(target.y - lastValidLookaheadPoint.y, 2);
+    if (selfDotProduct < ELIPSON_DOUBLE) { // if the target and last valid lookahead point are basically the same
+        return target;
+    }
+    double twoceCircleOffset = 2 * (((lastValidLookaheadPoint.x - robot->pos.x) * (target.x - lastValidLookaheadPoint.x)) + ((lastValidLookaheadPoint.y - robot->pos.y) * (target.y - lastValidLookaheadPoint.y)));
+    double prevTarCurPosDist = (std::pow(lastValidLookaheadPoint.x - robot->pos.x, 2) + std::pow(lastValidLookaheadPoint.y - robot->pos.y, 2)) - std::pow(checkRadius, 2);
+    double discriminant = std::pow(twoceCircleOffset, 2) - (4 * selfDotProduct * prevTarCurPosDist);
+
+    if (discriminant >= 0) { // if the circle intersects the line at all
+        const float intersectRatio1 = (-twoceCircleOffset + sqrt(discriminant)) / (2 * selfDotProduct); // t value
+        const float intersectRatio2 = (-twoceCircleOffset - sqrt(discriminant)) / (2 * selfDotProduct); // t value
+
+        const Vec2 intersect1 = {lastValidLookaheadPoint.x + (target.x - lastValidLookaheadPoint.x) * intersectRatio1, lastValidLookaheadPoint.y + (target.y - lastValidLookaheadPoint.y) * intersectRatio1};
+        const Vec2 intersect2 = {lastValidLookaheadPoint.x + (target.x - lastValidLookaheadPoint.x) * intersectRatio2, lastValidLookaheadPoint.y + (target.y - lastValidLookaheadPoint.y) * intersectRatio2};
 
 
-    if (discriminant >= 0) {
-        const float intersectRatio1 = (-twoceCircleOffset + sqrt(discriminant)) / (2 * dotProduct);
-        const float intersectRatio2 = (-twoceCircleOffset - sqrt(discriminant)) / (2 * dotProduct);
+        const bool intersect1Valid = (intersectRatio1 >= 0 && intersectRatio1 <= 1);
+        const bool intersect2Valid = (intersectRatio2 >= 0 && intersectRatio2 <= 1);
+        const bool bothOnLine = intersect1Valid && intersect2Valid;
 
-        const Vec2 intercept1 = {prevTarget.x + (target.x - prevTarget.x) * intersectRatio1, prevTarget.y + (target.y - prevTarget.y) * intersectRatio1};
-        const Vec2 intercept2 = {prevTarget.x + (target.x - prevTarget.x) * intersectRatio2, prevTarget.y + (target.y - prevTarget.y) * intersectRatio2};
-
-        const bool within_x = (minTarget.x <= intercept1.x && intercept1.x <= maxTarget.x) || (minTarget.x <= intercept2.x && intercept2.x <= maxTarget.x);
-        const bool within_y = (minTarget.y <= intercept1.y && intercept1.y <= maxTarget.y) || (minTarget.y <= intercept2.y && intercept2.y <= maxTarget.y);
-        if (within_x && within_y && std::abs(intercept2.x - target.x) + std::abs(intercept2.y - target.y) <
-            std::abs(intercept1.x - target.x) + std::abs(intercept1.y - target.y)) {
-            return intercept2;
+        if (bothOnLine) { // The robot has two intersects to choose from. Choose the one furthest along the line (closest to target)
+            if (intersectRatio1 > intersectRatio2) {
+                lastValidLookaheadPoint = intersect1;
+                return intersect1;
+            } else {
+                lastValidLookaheadPoint = intersect2;
+                return intersect2;
+            }
+        } else if (intersect1Valid || intersect2Valid) { // The robot has one valid intersect to choose from
+            if (intersect1Valid) {
+                lastValidLookaheadPoint = intersect1;
+                return intersect1;
+            } else {
+                lastValidLookaheadPoint = intersect2;
+                return intersect2;
+            }
         } else {
-            return prevTarget;
+            return lastValidLookaheadPoint;
         }
     }
     return target; // Fallback

@@ -13,6 +13,9 @@ struct W_Vec2;
 
 //| MARK: Constants
 constexpr double PI = 3.14159265358979323846;
+constexpr float ELIPSON_FLOAT = std::numeric_limits<float>::epsilon();
+constexpr double ELIPSON_DOUBLE = std::numeric_limits<double>::epsilon();
+constexpr long double ELIPSON_LDOUBLE = std::numeric_limits<long double>::epsilon();
 constexpr float FRAME = {10}; // Frame time
 
 
@@ -20,8 +23,8 @@ constexpr float FRAME = {10}; // Frame time
 
 //| MARK: Structs
 struct Vec2 {
-    float x;
-    float y;
+    double x;
+    double y;
 
     constexpr Vec2(float _x = 0.0f, float _y = 0.0f) noexcept
         : x(_x), y(_y) {}
@@ -289,7 +292,7 @@ inline float dotProd(const Vec2& vec1, const Vec2& vec2) noexcept {
 }
 
 inline float crossProd(const Vec2& vec1, const Vec2& vec2) noexcept {
-    return (vec1.x * vec2.y) - (vec2.x * vec1.y);
+    return (vec1.x * vec2.y) - (vec1.y * vec1.x); // A.x * B.y - A.y * B.x
 }
 
 inline Vec2 rad2vec(float angleRad) {

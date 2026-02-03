@@ -35,7 +35,7 @@ namespace autonAPI {
 
         SpeedPair getSpeedFromPID_to(Vec2& _target);
         float updateHeadingAndOdom();
-        Vec2 getPurePursuitLoc(const float& checkRadius, const Vec2& target, const Vec2& prevTarget);
+        Vec2 getPurePursuitLoc(const float& checkRadius, const Vec2& target);
         inline void _bindRobot(robotAPI::Robot* r) { robot = r; }
     };
 }

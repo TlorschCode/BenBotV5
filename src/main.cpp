@@ -278,21 +278,23 @@ void autonomous() {
 	constexpr float robotCheckRadius = 10.0f;
 	Point target = autonPoints.at(0);
 	Point prevPoint = robot.pos;
-	Vec2 curTargetLoc = {0, 0};
-	Vec2 prevTargetLoc = {0, 0};
+	Vec2 curTargetLoc = {0, 0};  // The current intersect
+	Vec2 prevTargetLoc = {0, 0}; // Last valid intersect
 	robot.drivetrain.brakeWheels();
 	for (size_t ptIdx = 0; ptIdx < autonPoints.size() - 1; ptIdx++) { // - 1 so we can have an extra point the robot doesn't visit but it aims for
 		Point &point = autonPoints.at(ptIdx);
 		while (!point.visited) {
-			curTargetLoc = robot.autonController.load().get()->getPurePursuitLoc(robotCheckRadius, point.pos, prevTargetLoc);
-			robot.drivetrain.setSpeedFromSpeedPair(robot.autonController.load().get()->getSpeedFromPID_to(point.pos));
+			curTargetLoc = robot.autonController.load().get()->getPurePursuitLoc(robotCheckRadius, point.pos);
+			prevTargetLoc = curTargetLoc;
+			SpeedPair result = robot.autonController.load().get()->getSpeedFromPID_to(point.pos);
+			robot.drivetrain.setSpeedFromSpeedPair(result);
 			printOnScreen(distanceBetween(robot.pos, point.pos));
 			printOnScreen((distanceBetween(robot.pos, point.pos) < 2), 1);
 			printOnScreen(std::to_string(point.pos.x) + ", " + std::to_string(point.pos.y), 2);
 			// printOnScreen(robot.drivetrain.leftSpeed, 3);
 			// printOnScreen(robot.drivetrain.rightSpeed, 4);
-			printOnScreen(robot.autonController.load().get()->getSpeedFromPID_to(point.pos).leftSpeed, 4);
-			printOnScreen(robot.autonController.load().get()->getSpeedFromPID_to(point.pos).rightSpeed, 5);
+			printOnScreen(result.leftSpeed, 4);
+			printOnScreen(result.rightSpeed, 5);
 			// When within 2 inches of a point, mark that point as visted
 			point.visited = (distanceBetween(robot.pos, point.pos) < 2);
 			robot.drivetrain.moveWheels();
