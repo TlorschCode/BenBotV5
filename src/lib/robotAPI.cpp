@@ -119,13 +119,21 @@ void Drivetrain::setSpeedFromSpeedPair(const SpeedPair &pair) {
 
 Robot* Robot::instance = nullptr; // Initialize instance to nullptr
 
-Robot& Robot::GenRobot(const std::array<DrivetrainMotor, 6> &_wheels, float wheelCircumference, float hardwareGearRatio, const pros::Imu &_inertial) {
+Robot& Robot::Init(const std::array<DrivetrainMotor, 6> &_wheels, float wheelCircumference, float hardwareGearRatio, const pros::Imu &_inertial) {
 	if (Robot::instance == nullptr) {
 		Robot::instance = new Robot(_wheels, wheelCircumference, hardwareGearRatio, _inertial);
 		return *Robot::instance;
 
 	} else {
 		throw std::logic_error("Cannot create multiple instances of singleton Robot.");
+	}
+}
+
+Robot& Robot::Get() {
+	if (instance == nullptr) {
+		throw std::logic_error("Cannot call Get on singleton Robot with uninitialized instance");
+	} else {
+		return *Robot::instance;
 	}
 }
 

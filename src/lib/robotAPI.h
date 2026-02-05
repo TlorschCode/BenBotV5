@@ -173,7 +173,8 @@ private:
 	static Robot* instance;
 	~Robot() = default;
 public:
-	static Robot& GenRobot(const std::array<DrivetrainMotor, 6> &_wheels, float wheelCircumference, float hardwareGearRatio, const pros::Imu &_inertial);
+	static Robot& Init(const std::array<DrivetrainMotor, 6> &_wheels, float wheelCircumference, float hardwareGearRatio, const pros::Imu &_inertial);
+	static Robot& Get();
 	Robot& operator=(const Robot&) = delete;
 	Robot(const Robot&) = delete;
 	Vec2 pos = {0, 0};

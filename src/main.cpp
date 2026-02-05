@@ -55,7 +55,7 @@ float allRotPrev = {0}; // The previous rotation of all the drivetrain wheels
 
 bool pressingPneumatics = false;
 // MARK: Init robot
-inline Robot init_robot() {
+inline Robot& init_robot() {
 	DrivetrainMotor topLeft(4, false, pros::v5::MotorGearset::blue);    // Reverse
 	DrivetrainMotor middleLeft(5, false, pros::v5::MotorGearset::blue); // Reverse
 	DrivetrainMotor bottomLeft(6, true, pros::v5::MotorGearset::blue);  // Normal
@@ -70,11 +70,12 @@ inline Robot init_robot() {
 		middleRight,
 		bottomRight
 	};
-	return Robot(drivetrain, 8.639379f, 0.75f, inertial);
+	Robot::Init(drivetrain, 8.639379f, 0.75f, inertial);
+	return Robot::Get();
 }
 
 // MARK: Robot
-Robot robot = init_robot();
+Robot& robot = init_robot();
 
 //TODO: Make robot atomic, pos, and inertial atomimc to prevent race conditions (we have an async method running auton, but that is accessing inertial, pos, and heading)
 
