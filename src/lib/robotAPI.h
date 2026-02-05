@@ -1,6 +1,7 @@
 #pragma once
 #include "globalAPI.h"
 #include "controllerAPI.h"
+#include <stdexcept>
 #include <array>
 #include <memory>
 
@@ -160,27 +161,26 @@ public:
 // Struct for heading which forces the radian and degree values to remain synchronized
 
 // MARK: Robot
+
+// Singleton.
 // A container for a drivetrain, an auton controlller, and various other parts.
 // pos: position of the robot
 // heading: the heading of the robot (in degrees)
 class Robot {
+private:
+	// hardwareGearRatio is the external gear ratio for the drivetrain from motor shaft rotations to actual wheel rotations. This is common for drivetrains with motors placed between wheels.
+	Robot(const std::array<DrivetrainMotor, 6> &_wheels, float wheelCircumference, float hardwareGearRatio, const pros::Imu &_inertial);
+	static Robot* instance;
+	~Robot() = default;
 public:
+	static Robot& GenRobot(const std::array<DrivetrainMotor, 6> &_wheels, float wheelCircumference, float hardwareGearRatio, const pros::Imu &_inertial);
+	Robot& operator=(const Robot&) = delete;
+	Robot(const Robot&) = delete;
 	Vec2 pos = {0, 0};
 	float heading_deg = 0;
 	Drivetrain drivetrain;
 	pros::Imu inertial;
 	std::atomic<std::shared_ptr<autonAPI::PID_Controller>> autonController;
-
-
-	// hardwareGearRatio is the external gear ratio for the drivetrain from motor shaft rotations to actual wheel rotations. This is common for drivetrains with motors placed between wheels.
-	Robot(const std::array<DrivetrainMotor, 6> &_wheels, float wheelCircumference, float hardwareGearRatio, const pros::Imu &_inertial);
-
-	constexpr inline Robot& operator=(const Robot& _new) noexcept {
-		pos = _new.pos;
-		heading_deg = _new.heading_deg;
-		drivetrain = _new.drivetrain;
-		return *this;
-	}
 };
 
 } // namespace robotAPI

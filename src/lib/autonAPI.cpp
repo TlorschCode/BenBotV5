@@ -80,29 +80,20 @@ Vec2 PID_Controller::getPurePursuitLoc(const float &checkRadius, const Vec2 &tar
 
         const bool intersect1Valid = (intersectRatio1 >= 0 && intersectRatio1 <= 1);
         const bool intersect2Valid = (intersectRatio2 >= 0 && intersectRatio2 <= 1);
-        const bool bothOnLine = intersect1Valid && intersect2Valid;
 
-        if (bothOnLine) { // The robot has two intersects to choose from. Choose the one furthest along the line (closest to target)
+        if (intersect1Valid && intersect2Valid) { // The robot has two intersects to choose from. Choose the one furthest along the line (closest to target)
             if (intersectRatio1 > intersectRatio2) {
-                lastValidLookaheadPoint = intersect1;
-                return intersect1;
+                return lastValidLookaheadPoint = intersect1;
             } else {
-                lastValidLookaheadPoint = intersect2;
-                return intersect2;
+                return lastValidLookaheadPoint = intersect2;
             }
-        } else if (intersect1Valid || intersect2Valid) { // The robot has one valid intersect to choose from
-            if (intersect1Valid) {
-                lastValidLookaheadPoint = intersect1;
-                return intersect1;
-            } else {
-                lastValidLookaheadPoint = intersect2;
-                return intersect2;
-            }
+        } else if (intersect1Valid) { // The robot has one valid intersect to choose from: chose valid one
+            return lastValidLookaheadPoint = intersect1;
         } else {
-            return lastValidLookaheadPoint;
+            return lastValidLookaheadPoint = intersect2;
         }
     }
-    return target; // Fallback
+    return target; // Robot's circle did not interesect the line. Return the target's raw position
 }
 
 

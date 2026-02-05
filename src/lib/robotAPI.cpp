@@ -117,6 +117,18 @@ void Drivetrain::setSpeedFromSpeedPair(const SpeedPair &pair) {
 
 //| MARK: Robot
 
+Robot* Robot::instance = nullptr; // Initialize instance to nullptr
+
+Robot& Robot::GenRobot(const std::array<DrivetrainMotor, 6> &_wheels, float wheelCircumference, float hardwareGearRatio, const pros::Imu &_inertial) {
+	if (Robot::instance == nullptr) {
+		Robot::instance = new Robot(_wheels, wheelCircumference, hardwareGearRatio, _inertial);
+		return *Robot::instance;
+
+	} else {
+		throw std::logic_error("Cannot create multiple instances of singleton Robot.");
+	}
+}
+
 Robot::Robot(const std::array<DrivetrainMotor, 6> &_wheels, float wheelCircumference, float hardwareGearRatio, const pros::Imu &_inertial)
 		: drivetrain(_wheels, wheelCircumference, hardwareGearRatio), inertial(_inertial),
 		  autonController(std::make_unique<autonAPI::PID_Controller>()) {
