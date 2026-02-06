@@ -1,5 +1,5 @@
 #pragma once
-#include "globalAPI.h"
+#include "common.h"
 
 
 namespace ctrlAPI {

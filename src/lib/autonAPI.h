@@ -1,5 +1,5 @@
 #pragma once
-#include "globalAPI.h"
+#include "common.h"
 #include <array>
 
 namespace robotAPI { class Robot; }
