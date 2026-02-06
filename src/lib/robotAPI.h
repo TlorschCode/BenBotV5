@@ -116,15 +116,6 @@ public:
 		driveMode = (driveMode == DrivingMode::SINGLE_JOYSTICK) ? DrivingMode::TANK : DrivingMode::SINGLE_JOYSTICK;
 	}
 
-	inline float getLeftSpeed()  const noexcept { return leftSpeed; }
-	inline float getRightSpeed() const noexcept { return rightSpeed; }
-
-	inline void setLeftSpeed(float amount)  noexcept { leftSpeed = amount; }
-	inline void setRightSpeed(float amount) noexcept { rightSpeed = amount; }
-
-	inline void changeLeftSpeed(float amount)  noexcept { leftSpeed += amount; }
-	inline void changeRightSpeed(float amount) noexcept { rightSpeed += amount; }
-
 	// Returns the averaged position of all left motors
 	// Return unit: the encoding unit of each motor
 	inline float getLeftMotorsPos() const {

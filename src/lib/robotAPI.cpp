@@ -1,4 +1,5 @@
 #include "robotAPI.h"
+#include "autonAPI.h"
 #include "common.h"
 #include <memory>
 #include <mutex>
@@ -140,5 +141,5 @@ Robot& Robot::Get() {
 Robot::Robot(const std::array<DrivetrainMotor, 6> &_wheels, float wheelCircumference, float hardwareGearRatio, const pros::Imu &_inertial)
 		: drivetrain(_wheels, wheelCircumference, hardwareGearRatio), inertial(_inertial),
 		  autonController(std::make_unique<autonAPI::AutonController>()) {
-	autonController.load()->_bindRobot(this);
+	autonController.load().get()->_bindRobot(this);
 }
