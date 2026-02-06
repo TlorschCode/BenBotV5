@@ -18,7 +18,7 @@ struct Point {
 };
 
 namespace autonAPI {
-    class PID_Controller {
+    class AutonController {
     private:
         robotAPI::Robot* robot = nullptr;
         W_float pPos = {0, 0.60f};
@@ -31,7 +31,7 @@ namespace autonAPI {
         float prev_rot = 0;
         float prev_allWheelRot = 0;
     public:
-        PID_Controller() = default;
+        AutonController() = default;
 
         SpeedPair getSpeedFromPID_to(Vec2& _target);
         float updateHeadingAndOdom();

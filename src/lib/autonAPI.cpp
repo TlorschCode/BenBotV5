@@ -11,7 +11,7 @@ namespace autonAPI {
 
 // Returns the left and right speed a robot's drivetrain should adopt in order to go towards a point using PID.
 // (Uses dot product to control rotation PID)
-SpeedPair PID_Controller::getSpeedFromPID_to(Vec2& target) {
+SpeedPair AutonController::getSpeedFromPID_to(Vec2& target) {
     //| Statics
     static float prevPosError = 0;
     static float prevRotError = 0;
@@ -57,7 +57,7 @@ SpeedPair PID_Controller::getSpeedFromPID_to(Vec2& target) {
 }
 
 
-Vec2 PID_Controller::getPurePursuitLoc(const float &checkRadius, const Vec2 &target) {
+Vec2 AutonController::getPurePursuitLoc(const float &checkRadius, const Vec2 &target) {
     static Vec2 lastValidLookaheadPoint{0, 0};
     Vec2 minTarget = {std::min(target.x, lastValidLookaheadPoint.x), std::min(target.y, lastValidLookaheadPoint.y)};
     Vec2 maxTarget = {std::max(target.x, lastValidLookaheadPoint.x), std::max(target.y, lastValidLookaheadPoint.y)};
@@ -97,7 +97,7 @@ Vec2 PID_Controller::getPurePursuitLoc(const float &checkRadius, const Vec2 &tar
 }
 
 
-float PID_Controller::updateHeadingAndOdom() {
+float AutonController::updateHeadingAndOdom() {
     uint32_t now = pros::millis();
 
     robot->heading_deg = truncate(robot->inertial.get_rotation()); // Cutoff at 2 decimal places because inertial sensor is innacurate

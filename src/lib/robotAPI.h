@@ -6,7 +6,7 @@
 #include <memory>
 
 namespace autonAPI {
-	class PID_Controller;
+	class AutonController;
 }
 
 namespace robotAPI {
@@ -181,7 +181,7 @@ public:
 	float heading_deg = 0;
 	Drivetrain drivetrain;
 	pros::Imu inertial;
-	std::atomic<std::shared_ptr<autonAPI::PID_Controller>> autonController;
+	std::atomic<std::shared_ptr<autonAPI::AutonController>> autonController;
 };
 
 } // namespace robotAPI

@@ -118,7 +118,7 @@ public:
     inline UnitInterval operator*(double f) const { return UnitInterval(clamp(value * f)); }
     inline UnitInterval operator/(double f) const { return UnitInterval(clamp(value / f)); }
 
-    // Optional getter
+    // Getter
     float get() const { return value; }
 };
 inline UnitInterval operator+(float f, const UnitInterval& u) { return UnitInterval(f + float(u)); }
