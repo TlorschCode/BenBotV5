@@ -11,7 +11,7 @@ namespace autonAPI {
 
 // Returns the left and right speed a robot's drivetrain should adopt in order to go towards a point using PID.
 // (Uses dot product to control rotation PID)
-SpeedPair AutonController::getSpeedFromPID_to(Vec2& target) {
+SpeedPair AutonController::getPID_speedTo(Vec2& target) {
     //| Statics
     static float prevPosError = 0;
     static float prevRotError = 0;

@@ -21,19 +21,18 @@ namespace autonAPI {
     class AutonController {
     private:
         robotAPI::Robot* robot = nullptr;
-        W_float pPos = {0, 0.60f};
+        W_float pPos = {0, 0.60f}; // vvv magic numbers found through testing vvv
         W_float iPos = {0, 0.005f};
         W_float dPos = {0, 0.42f};
 
         W_float pRot = {0, 0.10f};
         W_float iRot = {0, 0.005f};
         W_float dRot = {0, 0.085f};
-        float prev_rot = 0;
         float prev_allWheelRot = 0;
     public:
         AutonController() = default;
 
-        SpeedPair getSpeedFromPID_to(Vec2& _target);
+        SpeedPair getPID_speedTo(Vec2& _target);
         float updateHeadingAndOdom();
         Vec2 getPurePursuitLoc(const float& checkRadius, const Vec2& target);
         inline void _bindRobot(robotAPI::Robot* r) { robot = r; }

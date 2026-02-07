@@ -37,7 +37,7 @@ public:
 
 	void setVelocityPercent(float vel);
 	void brake();
-	void setDirection(bool reversed);
+	void setReversed(bool reversed);
 	inline double getActualVelocity() const {
 		return rawMotor.get_actual_velocity();
 	}

@@ -287,7 +287,7 @@ void autonomous() {
 		while (!point.visited) {
 			curTargetLoc = robot.autonController.load().get()->getPurePursuitLoc(robotCheckRadius, point.pos);
 			prevTargetLoc = curTargetLoc;
-			SpeedPair result = robot.autonController.load().get()->getSpeedFromPID_to(point.pos);
+			SpeedPair result = robot.autonController.load().get()->getPID_speedTo(point.pos);
 			robot.drivetrain.setSpeedFromSpeedPair(result);
 			printOnScreen(distanceBetween(robot.pos, point.pos));
 			printOnScreen((distanceBetween(robot.pos, point.pos) < 2), 1);

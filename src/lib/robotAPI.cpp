@@ -45,7 +45,7 @@ void DrivetrainMotor::setVelocityPercent(float vel) {
 void DrivetrainMotor::brake() {
 	rawMotor.brake();
 }
-void DrivetrainMotor::setDirection(bool reversed) {
+void DrivetrainMotor::setReversed(bool reversed) {
 	rawMotor.set_reversed(reversed);
 }
 
@@ -141,5 +141,5 @@ Robot& Robot::Get() {
 Robot::Robot(const std::array<DrivetrainMotor, 6> &_wheels, float wheelCircumference, float hardwareGearRatio, const pros::Imu &_inertial)
 		: drivetrain(_wheels, wheelCircumference, hardwareGearRatio), inertial(_inertial),
 		  autonController(std::make_unique<autonAPI::AutonController>()) {
-	autonController.load().get()->_bindRobot(this);
+	autonController.load()->_bindRobot(this);
 }
