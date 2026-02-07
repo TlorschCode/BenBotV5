@@ -1,3 +1,5 @@
+/*###|   robotAPI.cpp   |###*/
+
 #include "robotAPI.h"
 #include "autonAPI.h"
 #include "common.h"
@@ -98,8 +100,8 @@ void Drivetrain::setSpeedFromController(const ctrlAPI::Controller &controller) {
 		this->leftSpeed = controller.leftAnalogYPercent - controller.leftAnalogXPercent;
 		this->rightSpeed = controller.leftAnalogYPercent + controller.leftAnalogXPercent;
 	} else {
-		this->leftSpeed = controller.rightAnalogYPercent;
-		this->rightSpeed = controller.leftAnalogYPercent;
+		this->rightSpeed = controller.rightAnalogYPercent;
+		this->leftSpeed = controller.leftAnalogYPercent;
 	}
 	moveWheels();
 }

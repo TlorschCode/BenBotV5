@@ -1,3 +1,5 @@
+/*###|   autonAPI.h   |###*/
+
 #pragma once
 #include "common.h"
 #include <array>
@@ -32,7 +34,8 @@ namespace autonAPI {
     public:
         AutonController() = default;
 
-        SpeedPair getPID_speedTo(Vec2& _target);
+        _nodiscard_ std::vector<Point> driveAlongPath(std::vector<Point> path, float robotCheckRadius);
+        _nodiscard_ SpeedPair getPID_speedTo(Vec2& _target);
         float updateHeadingAndOdom();
         Vec2 getPurePursuitLoc(const float& checkRadius, const Vec2& target);
         inline void _bindRobot(robotAPI::Robot* r) { robot = r; }

@@ -1,7 +1,11 @@
+/*###|   common.h   |###*/
+
 #pragma once
 #include "main.h"
 #include <string>
 #include <cmath>
+
+#define _nodiscard_ [[nodiscard]]
 
 //| MARK: Predefs
 struct Vec2;
@@ -63,8 +67,8 @@ struct SpeedPair {
     constexpr inline SpeedPair operator/(const SpeedPair& a) const noexcept { return {leftSpeed / a.leftSpeed, rightSpeed / a.rightSpeed}; }
 
     // Vec2 <op> float
-    constexpr inline SpeedPair operator*(const float& a) const noexcept { return {rightSpeed * a, leftSpeed * a}; }
-    constexpr inline SpeedPair operator/(const float& a) const noexcept { return {rightSpeed / a, leftSpeed / a}; }
+    constexpr inline SpeedPair operator*(const float& a) const noexcept { return {leftSpeed * a, rightSpeed * a}; }
+    constexpr inline SpeedPair operator/(const float& a) const noexcept { return {leftSpeed / a, rightSpeed / a}; }
 
     // Compound assignments for Vec2
     constexpr inline SpeedPair& operator+=(const SpeedPair& a) noexcept { leftSpeed += a.leftSpeed; rightSpeed += a.rightSpeed; return *this; }
@@ -292,7 +296,7 @@ inline float dotProd(const Vec2& vec1, const Vec2& vec2) noexcept {
 }
 
 inline float crossProd(const Vec2& vec1, const Vec2& vec2) noexcept {
-    return (vec1.x * vec2.y) - (vec1.y * vec1.x); // A.x * B.y - A.y * B.x
+    return (vec1.x * vec2.y) - (vec1.y * vec2.x); // A.x * B.y - A.y * B.x
 }
 
 inline Vec2 rad2vec(float angleRad) {

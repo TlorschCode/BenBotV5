@@ -1,3 +1,5 @@
+/*###|   main.cpp   |###*/
+
 #include "lib/common_includes.h"
 #include "pros/misc.h"
 #include <fstream>
@@ -55,7 +57,7 @@ float allRotPrev = {0}; // The previous rotation of all the drivetrain wheels
 
 bool pressingPneumatics = false;
 // MARK: Init robot
-inline Robot& init_robot() {
+_nodiscard_ inline Robot& init_robot() {
 	DrivetrainMotor topLeft(4, false, pros::v5::MotorGearset::blue);    // Reverse
 	DrivetrainMotor middleLeft(5, false, pros::v5::MotorGearset::blue); // Reverse
 	DrivetrainMotor bottomLeft(6, true, pros::v5::MotorGearset::blue);  // Normal
@@ -133,14 +135,11 @@ void checkPauseProgram() { /// REMOVE THIS FUNCTION FOR FINAL COMPETITION
 //| DEFAULT FUNCTIONS |//
 void initialize() {
 	configureMotors();
-	init_robot();
 	pros::lcd::initialize();
 	robot.inertial.reset();
 	while (robot.inertial.is_calibrating()) {
 		wait(FRAME);
 	}
-	// MARK: Thread
-	odomThread = new pros::Task(thread_UpdateOdom);
 }
 
 // MARK-: Disabled
@@ -247,6 +246,7 @@ void quickAuton() {
 			robot.drivetrain.leftSpeed += 1;
 			robot.drivetrain.rightSpeed += 1;
 		}
+		robot.drivetrain.moveWheels();
 	}
 	conveyor.move_velocity(200);
 	bandRotatorBottom.move_velocity(200);
@@ -277,32 +277,7 @@ void autonomous() {
 		{0, -24}
 	};
 	constexpr float robotCheckRadius = 10.0f;
-	Point target = autonPoints.at(0);
-	Point prevPoint = robot.pos;
-	Vec2 curTargetLoc = {0, 0};  // The current intersect
-	Vec2 prevTargetLoc = {0, 0}; // Last valid intersect
-	robot.drivetrain.brakeWheels();
-	for (size_t ptIdx = 0; ptIdx < autonPoints.size() - 1; ptIdx++) { // - 1 so we can have an extra point the robot doesn't visit but it aims for
-		Point &point = autonPoints.at(ptIdx);
-		while (!point.visited) {
-			curTargetLoc = robot.autonController.load().get()->getPurePursuitLoc(robotCheckRadius, point.pos);
-			prevTargetLoc = curTargetLoc;
-			SpeedPair result = robot.autonController.load().get()->getPID_speedTo(point.pos);
-			robot.drivetrain.setSpeedFromSpeedPair(result);
-			printOnScreen(distanceBetween(robot.pos, point.pos));
-			printOnScreen((distanceBetween(robot.pos, point.pos) < 2), 1);
-			printOnScreen(std::to_string(point.pos.x) + ", " + std::to_string(point.pos.y), 2);
-			// printOnScreen(robot.drivetrain.leftSpeed, 3);
-			// printOnScreen(robot.drivetrain.rightSpeed, 4);
-			printOnScreen(result.leftSpeed, 4);
-			printOnScreen(result.rightSpeed, 5);
-			// When within 2 inches of a point, mark that point as visted
-			point.visited = (distanceBetween(robot.pos, point.pos) < 2);
-			robot.drivetrain.moveWheels();
-			checkPauseProgram();
-			wait(FRAME);
-		}
-	}
+	autonPoints = robot.autonController.load().get()->driveAlongPath(std::move(autonPoints), robotCheckRadius);
 	printOnScreen("WE DID IT!");
 	wait(100000);
 }
@@ -359,6 +334,7 @@ void scorePipeline() {
 // MARK: opcontrol
 void opcontrol() {
 	autonomous();
+	odomThread = new pros::Task(thread_UpdateOdom);
 	// clear_screen();
 	// bool motors_overheated = false;
 	// while (!motors_overheated) {
