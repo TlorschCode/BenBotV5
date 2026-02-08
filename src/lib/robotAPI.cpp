@@ -3,9 +3,6 @@
 #include "robotAPI.h"
 #include "autonAPI.h"
 #include "common.h"
-#include <memory>
-#include <mutex>
-#include <cmath>  // for atan2, cos, sin, abs
 
 using namespace robotAPI;
 //| MARK: DrivetrainMotor

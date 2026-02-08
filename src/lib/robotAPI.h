@@ -6,6 +6,9 @@
 #include <stdexcept>
 #include <array>
 #include <memory>
+#include <memory>
+#include <mutex>
+#include <cmath>
 
 namespace autonAPI {
 	class AutonController;

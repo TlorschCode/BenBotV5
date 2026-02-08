@@ -253,16 +253,6 @@ constexpr inline W_float operator/(float a, const W_float& b) noexcept { return 
 
 //| MARK: Utilities
 
-// Returns degrees -> radians
-inline double deg2rad(float degrees) noexcept {
-	return degrees * (PI / 180);
-}
-
-// Returns radians -> degrees
-inline double rad2deg(double radians) noexcept {
-	return radians * (180 / PI);
-}
-
 // Truncates a value at cutoff decimal places. (Default = 2)
 inline double truncate(double num, int cutoff = 2) {
 	return std::floor(num * std::pow(10, cutoff)) / std::pow(10, cutoff);
@@ -302,11 +292,25 @@ inline float crossProd(const Vec2& vec1, const Vec2& vec2) noexcept {
     return (vec1.x * vec2.y) - (vec1.y * vec2.x); // A.x * B.y - A.y * B.x
 }
 
-inline Vec2 rad2vec(float angleRad) {
+// Returns degrees -> radians
+inline double deg2rad(double degrees) noexcept {
+	return degrees * (PI / 180);
+}
+
+// Returns radians -> degrees
+inline double rad2deg(double radians) noexcept {
+	return radians * (180 / PI);
+}
+
+// Returns radians -> Vec2
+// Uses sin and cos to turn the angle into coordinates on a unit circle
+inline Vec2 rad2vec(double angleRad) {
     return Vec2{ std::cos(angleRad), std::sin(angleRad) };
 }
 
-inline Vec2 deg2vec(float angleDeg) {
+// Returns degrees -> Vec2
+// Uses sin and cos to turn the angle into coordinates on a unit circle
+inline Vec2 deg2vec(double angleDeg) {
     return Vec2{ std::cos(deg2rad(angleDeg)), std::sin(deg2rad(angleDeg)) };
 }
 
