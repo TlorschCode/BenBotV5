@@ -13,7 +13,7 @@ namespace autonAPI {
 
 // Returns the left and right speed a robot's drivetrain should adopt in order to go towards a point using PID.
 // (Uses dot product to control rotation PID)
-_nodiscard_ SpeedPair AutonController::getPID_speedTo(Vec2& target) {
+NODISCARD SpeedPair AutonController::getPID_speedTo(Vec2& target) {
     //| Statics
     static float prevPosError = 0;
     static float prevRotError = 0;
@@ -60,7 +60,7 @@ _nodiscard_ SpeedPair AutonController::getPID_speedTo(Vec2& target) {
 
 // Uses PID and Pure Pursuit to drive along a path.
 // Pass `points` by std::move for optimal performance, so long as the orginal array is no longer needed
-std::vector<Point> AutonController::driveAlongPath(std::vector<Point> points, float robotCheckRadius) {
+std::vector<Point> AutonController::driveAlongPath(std::vector<Point> points) {
     Point target = points.at(0);
 	Point prevPoint = robot->pos;
 	Vec2 curTargetLoc = {0, 0};  // The current intersect
@@ -68,11 +68,16 @@ std::vector<Point> AutonController::driveAlongPath(std::vector<Point> points, fl
 	robot->drivetrain.brakeWheels();
 	for (size_t ptIdx = 0; ptIdx < points.size() - 1; ptIdx++) { // - 1 so we can have an extra point the robot doesn't visit but it aims for
 		Point& point = points.at(ptIdx);
+        const Point& nextPoint = points.at(ptIdx + 1);
+        robot->autonController.load().get()->getPurePursuitLoc({0, 0}, {0, 0}, resetStatics); // Reset lastValidLookaheadPoint
+
 		while (!point.visited) {
             updateHeadingAndOdom();
-			curTargetLoc = robot->autonController.load().get()->getPurePursuitLoc(robotCheckRadius, point.pos);
+			curTargetLoc = robot->autonController.load().get()->getPurePursuitLoc(point.pos, nextPoint.pos, keepStatics);
 			SpeedPair result = robot->autonController.load().get()->getPID_speedTo(curTargetLoc);
 			robot->drivetrain.setSpeedFromSpeedPair(result);
+
+            //* VVV Debug VVV
 			printOnScreen(distanceBetween(robot->pos, point.pos));
 			printOnScreen((distanceBetween(robot->pos, point.pos) < 2), 1);
 			printOnScreen(std::to_string(point.pos.x) + ", " + std::to_string(point.pos.y), 2);
@@ -80,6 +85,8 @@ std::vector<Point> AutonController::driveAlongPath(std::vector<Point> points, fl
 			// printOnScreen(robot->drivetrain.rightSpeed, 4);
 			printOnScreen(result.leftSpeed, 4);
 			printOnScreen(result.rightSpeed, 5);
+            //* ^^^ Debug ^^^
+
 			// When within 2 inches of a point, mark that point as visted
 			point.visited = (distanceBetween(robot->pos, point.pos) < 2);
 			robot->drivetrain.moveWheels();
@@ -89,20 +96,18 @@ std::vector<Point> AutonController::driveAlongPath(std::vector<Point> points, fl
     return points;
 }
 
-_nodiscard_ Vec2 AutonController::getPurePursuitLoc(const float &checkRadius, const Vec2 &target) {
-    static Vec2 lastValidLookaheadPoint{0, 0};
-
-    double selfDotProduct = std::pow(target.x - lastValidLookaheadPoint.x, 2) + std::pow(target.y - lastValidLookaheadPoint.y, 2);
-    if (selfDotProduct < ELIPSON_DOUBLE) { // if the target and last valid lookahead point are basically the same
+NODISCARD Vec2 AutonController::getIntersect(const Vec2 &target, const Vec2 lastValidLookaheadPoint) {
+    double lastIntersectToTargSqr = std::pow(target.x - lastValidLookaheadPoint.x, 2) + std::pow(target.y - lastValidLookaheadPoint.y, 2);
+    if (lastIntersectToTargSqr < ELIPSON_DOUBLE) { // if the target and last valid lookahead point are basically the same
         return target;
     }
-    double twoceCircleOffset = 2 * (((lastValidLookaheadPoint.x - robot->pos.x) * (target.x - lastValidLookaheadPoint.x)) + ((lastValidLookaheadPoint.y - robot->pos.y) * (target.y - lastValidLookaheadPoint.y)));
+    double twiceCircleOffset = 2 * (((lastValidLookaheadPoint.x - robot->pos.x) * (target.x - lastValidLookaheadPoint.x)) + ((lastValidLookaheadPoint.y - robot->pos.y) * (target.y - lastValidLookaheadPoint.y)));
     double prevTarCurPosDist = (std::pow(lastValidLookaheadPoint.x - robot->pos.x, 2) + std::pow(lastValidLookaheadPoint.y - robot->pos.y, 2)) - std::pow(checkRadius, 2);
-    double discriminant = std::pow(twoceCircleOffset, 2) - (4 * selfDotProduct * prevTarCurPosDist);
+    double discriminant = std::pow(twiceCircleOffset, 2) - (4 * lastIntersectToTargSqr * prevTarCurPosDist);
 
     if (discriminant >= 0) { // if the circle intersects the line at all (assuming the line extends infinitely)
-        const float intersectRatio1 = (-twoceCircleOffset + sqrt(discriminant)) / (2 * selfDotProduct); // t value
-        const float intersectRatio2 = (-twoceCircleOffset - sqrt(discriminant)) / (2 * selfDotProduct); // t value
+        const float intersectRatio1 = (-twiceCircleOffset + sqrt(discriminant)) / (2 * lastIntersectToTargSqr); // t value
+        const float intersectRatio2 = (-twiceCircleOffset - sqrt(discriminant)) / (2 * lastIntersectToTargSqr); // t value
 
         const Vec2 intersect1 = {lastValidLookaheadPoint.x + (target.x - lastValidLookaheadPoint.x) * intersectRatio1, lastValidLookaheadPoint.y + (target.y - lastValidLookaheadPoint.y) * intersectRatio1};
         const Vec2 intersect2 = {lastValidLookaheadPoint.x + (target.x - lastValidLookaheadPoint.x) * intersectRatio2, lastValidLookaheadPoint.y + (target.y - lastValidLookaheadPoint.y) * intersectRatio2};
@@ -110,19 +115,41 @@ _nodiscard_ Vec2 AutonController::getPurePursuitLoc(const float &checkRadius, co
         const bool intersect1Valid = (intersectRatio1 >= 0 && intersectRatio1 <= 1);
         const bool intersect2Valid = (intersectRatio2 >= 0 && intersectRatio2 <= 1);
 
-        if (intersect1Valid && intersect2Valid) { // The robot has two intersects to choose from. Choose the one furthest along the line (closest to target)
+        if (intersect1Valid && intersect2Valid) { // the robot has two intersects to choose from. Choose the one furthest along the line (closest to target)
             if (intersectRatio1 > intersectRatio2) {
-                return lastValidLookaheadPoint = intersect1;
+                return intersect1;
             } else {
-                return lastValidLookaheadPoint = intersect2;
+                return intersect2;
             }
         } else if (intersect1Valid) { // check if intersect1 is on the line (segment)
-            return lastValidLookaheadPoint = intersect1;
+            return intersect1;
         } else if (intersect2Valid) { // check if intersect2 is on the line (segment)
-            return lastValidLookaheadPoint = intersect2;
+            return intersect2;
         }
     }
     return target; // Robot's circle did not interesect the line. Return the target's raw position
+}
+
+NODISCARD Vec2 AutonController::getPurePursuitLoc(const Vec2 &target, const Vec2& nextTarget, bool resetLastLookahead) {
+    static Vec2 lastValidLookaheadPoint{0, 0};
+
+    if (resetLastLookahead) {
+        lastValidLookaheadPoint = target; //! Change this to robot->pos; potentially.
+        return lastValidLookaheadPoint;
+    }
+
+    const Vec2 intersectCur = getIntersect(target, lastValidLookaheadPoint);
+    const Vec2 intersectNext = getIntersect(nextTarget, lastValidLookaheadPoint);
+    const Vec2 chosenIntercept = (intersectNext == nextTarget) ? intersectCur : intersectNext;
+    /*                                         ^^^                           ^^^ choose the furthest intersect
+    getIntersect(nextTarget) couldn't find a valid interesct so it returned what was passed into it
+    */
+
+    if (chosenIntercept.x != target.x || chosenIntercept.y != target.y) { // update lastValidLookaheadPoint if intersect is different from target
+        lastValidLookaheadPoint = chosenIntercept;
+    }
+
+    return lastValidLookaheadPoint;
 }
 
 

@@ -57,7 +57,7 @@ float allRotPrev = {0}; // The previous rotation of all the drivetrain wheels
 
 bool pressingPneumatics = false;
 // MARK: Init robot
-_nodiscard_ inline Robot& init_robot() {
+NODISCARD inline Robot& init_robot() {
 	DrivetrainMotor topLeft(4, false, pros::v5::MotorGearset::blue);    // Reverse
 	DrivetrainMotor middleLeft(5, false, pros::v5::MotorGearset::blue); // Reverse
 	DrivetrainMotor bottomLeft(6, true, pros::v5::MotorGearset::blue);  // Normal
@@ -169,20 +169,20 @@ void skillsAuton() {
 	while (robot.inertial.is_calibrating()) {}
 	while (robot.pos.y < 12) {
 		
-		if (robot.drivetrain.leftSpeed < 50) {
+		if (robot.drivetrain.speed.leftSpeed < 50) {
 			// robot.drivetrain.moveWheels(robot.drivetrain.getLeftSpeed() + 1, robot.drivetrain.getRightSpeed() + 1);
-			robot.drivetrain.leftSpeed += 1;
-			robot.drivetrain.rightSpeed += 1;
+			robot.drivetrain.speed.leftSpeed += 1;
+			robot.drivetrain.speed.rightSpeed += 1;
 		}
 		robot.drivetrain.moveWheels();
 		wait(FRAME);
 	}
 	while (robot.pos.y < 24) {
 		
-		if (robot.drivetrain.leftSpeed > 10) {
+		if (robot.drivetrain.speed.leftSpeed > 10) {
 			// robot.drivetrain.moveWheels(robot.drivetrain.getLeftSpeed() - 0.85f, robot.drivetrain.getRightSpeed() - 0.85f);
-			robot.drivetrain.leftSpeed -= 0.85f;
-			robot.drivetrain.rightSpeed -= 0.85f;
+			robot.drivetrain.speed.leftSpeed -= 0.85f;
+			robot.drivetrain.speed.rightSpeed -= 0.85f;
 		}
 		robot.drivetrain.moveWheels();
 		wait(FRAME);
@@ -192,10 +192,10 @@ void skillsAuton() {
 	robot.drivetrain.moveWheels(0, 0);
 	while (robot.pos.y > -24) {
 		
-		if (robot.drivetrain.leftSpeed > -100) {
+		if (robot.drivetrain.speed.leftSpeed > -100) {
 			// robot.drivetrain.moveWheels(robot.drivetrain.getLeftSpeed() - 2, robot.drivetrain.getRightSpeed() - 2);
-			robot.drivetrain.leftSpeed -= 2;
-			robot.drivetrain.rightSpeed -= 2;
+			robot.drivetrain.speed.leftSpeed -= 2;
+			robot.drivetrain.speed.rightSpeed -= 2;
 		}
 		robot.drivetrain.moveWheels();
 		wait(FRAME);
@@ -207,18 +207,18 @@ void quickAuton() {
 	robot.drivetrain.setBrakeMode(BRAKE_MODE_HOLD);
 	// Score 3 points auton
 	while (robot.pos.y < 9) {
-		if (robot.drivetrain.leftSpeed < 50) {
-			robot.drivetrain.leftSpeed += 0.85f;
-			robot.drivetrain.rightSpeed += 1;
+		if (robot.drivetrain.speed.leftSpeed < 50) {
+			robot.drivetrain.speed.leftSpeed += 0.85f;
+			robot.drivetrain.speed.rightSpeed += 1;
 		}
 		robot.drivetrain.moveWheels();
 	}
 	robot.drivetrain.brakeWheels();
 	wait(100);
 	while (robot.pos.y < 18) {
-		if (robot.drivetrain.leftSpeed > 10) {
-			robot.drivetrain.leftSpeed -= 1;
-			robot.drivetrain.rightSpeed -= 1;
+		if (robot.drivetrain.speed.leftSpeed > 10) {
+			robot.drivetrain.speed.leftSpeed -= 1;
+			robot.drivetrain.speed.rightSpeed -= 1;
 		}
 		robot.drivetrain.moveWheels();
 	}
@@ -230,9 +230,9 @@ void quickAuton() {
 	robot.drivetrain.brakeWheels();
 	wait(100);
 	while (robot.pos.x < 40 && robot.pos.y > 12) {
-		if (robot.drivetrain.leftSpeed < 50) {
-			robot.drivetrain.leftSpeed += 1;
-			robot.drivetrain.rightSpeed += 1;
+		if (robot.drivetrain.speed.leftSpeed < 50) {
+			robot.drivetrain.speed.leftSpeed += 1;
+			robot.drivetrain.speed.rightSpeed += 1;
 		}
 		robot.drivetrain.moveWheels();
 	}
@@ -242,9 +242,9 @@ void quickAuton() {
 		robot.drivetrain.moveWheels(-30, 30);
 	}
 	while (robot.pos.y < 18) {
-		if (robot.drivetrain.leftSpeed < 50) {
-			robot.drivetrain.leftSpeed += 1;
-			robot.drivetrain.rightSpeed += 1;
+		if (robot.drivetrain.speed.leftSpeed < 50) {
+			robot.drivetrain.speed.leftSpeed += 1;
+			robot.drivetrain.speed.rightSpeed += 1;
 		}
 		robot.drivetrain.moveWheels();
 	}
@@ -276,8 +276,7 @@ void autonomous() {
 		{12, 12},
 		{0, -24}
 	};
-	constexpr float robotCheckRadius = 10.0f;
-	autonPoints = robot.autonController.load().get()->driveAlongPath(std::move(autonPoints), robotCheckRadius);
+	autonPoints = robot.autonController.load().get()->driveAlongPath(std::move(autonPoints));
 	printOnScreen("WE DID IT!");
 	wait(100000);
 }

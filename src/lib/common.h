@@ -5,7 +5,9 @@
 #include <string>
 #include <cmath>
 
-#define _nodiscard_ [[nodiscard]]
+#define NODISCARD [[nodiscard]]
+constexpr bool resetStatics = true;
+constexpr bool keepStatics = false;
 
 //| MARK: Predefs
 struct Vec2;
@@ -51,6 +53,7 @@ struct Vec2 {
     constexpr inline Vec2& operator*=(const float& a) noexcept { x *= a; y *= a;    return *this; }
     constexpr inline Vec2& operator/=(const float& a) noexcept { x /= a; y /= a;    return *this; }
 
+    constexpr inline bool operator==(const Vec2& a) const noexcept { return (a.x == x && a.y == y); }
 };
 // Contains leftSpeed and rightSpeed as a pair
 struct SpeedPair {
@@ -167,8 +170,8 @@ constexpr inline Vec2 operator*(const W_Vec2& a, const Vec2& b) noexcept { retur
 constexpr inline Vec2 operator/(const W_Vec2& a, const Vec2& b) noexcept { return {a.x / b.x, a.y / b.y}; }
 
 // Symmetric non-member float operators
-constexpr inline Vec2 operator*(const float& a, const Vec2& b) noexcept { return {b.x * a, b.y * a}; }
-constexpr inline Vec2 operator/(const float& a, const Vec2& b) noexcept { return {b.x / a, b.y / a}; }
+constexpr inline Vec2 operator*(const float& a, const Vec2& b) noexcept { return {a * b.x, a * b.y}; }
+constexpr inline Vec2 operator/(const float& a, const Vec2& b) noexcept { return {a / b.x, a / b.y}; }
 // constexpr inline Vec2 operator=(Vec2& a, const W_Vec2& b) noexcept { a.x = b.x; a.y = b.y; return a; }
 
 

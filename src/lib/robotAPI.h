@@ -68,8 +68,7 @@ public:
 	DrivetrainMotor w_topRight;
 	DrivetrainMotor w_middleRight;
 	DrivetrainMotor w_bottomRight;
-	float leftSpeed = 0;
-	float rightSpeed = 0;
+	SpeedPair speed = {0, 0};
 
 	// Empty Drivetrain constructor
 	Drivetrain();

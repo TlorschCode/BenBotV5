@@ -82,26 +82,26 @@ void Drivetrain::setBrakeMode(pros::motor_brake_mode_e mode) {
 	}
 }
 void Drivetrain::moveWheels() {
-	w_topLeft.setVelocityPercent(leftSpeed);
-	w_middleLeft.setVelocityPercent(leftSpeed);
-	w_bottomLeft.setVelocityPercent(leftSpeed);
+	w_topLeft.setVelocityPercent(speed.leftSpeed);
+	w_middleLeft.setVelocityPercent(speed.leftSpeed);
+	w_bottomLeft.setVelocityPercent(speed.leftSpeed);
 
-	w_topRight.setVelocityPercent(rightSpeed);
-	w_middleRight.setVelocityPercent(rightSpeed);
-	w_bottomRight.setVelocityPercent(rightSpeed);
+	w_topRight.setVelocityPercent(speed.rightSpeed);
+	w_middleRight.setVelocityPercent(speed.rightSpeed);
+	w_bottomRight.setVelocityPercent(speed.rightSpeed);
 }
 void Drivetrain::moveWheels(float speedLeft, float speedRight) {
-	this->leftSpeed = speedLeft;
-	this->rightSpeed = speedRight;
+	this->speed.leftSpeed = speedLeft;
+	this->speed.rightSpeed = speedRight;
 	moveWheels();
 }
 void Drivetrain::setSpeedFromController(const ctrlAPI::Controller &controller) {
 	if (driveMode == DrivingMode::SINGLE_JOYSTICK) {
-		this->leftSpeed = controller.leftAnalogYPercent - controller.leftAnalogXPercent;
-		this->rightSpeed = controller.leftAnalogYPercent + controller.leftAnalogXPercent;
+		this->speed.leftSpeed = controller.leftAnalogYPercent - controller.leftAnalogXPercent;
+		this->speed.rightSpeed = controller.leftAnalogYPercent + controller.leftAnalogXPercent;
 	} else {
-		this->rightSpeed = controller.rightAnalogYPercent;
-		this->leftSpeed = controller.leftAnalogYPercent;
+		this->speed.rightSpeed = controller.rightAnalogYPercent;
+		this->speed.leftSpeed = controller.leftAnalogYPercent;
 	}
 	moveWheels();
 }
@@ -109,12 +109,12 @@ void Drivetrain::brakeWheels() {
 	for (DrivetrainMotor* motor : getWheelsAsPtrs()) {
 		motor->brake();
 	}
-	this->leftSpeed = 0;
-	this->rightSpeed = 0;
+	this->speed.leftSpeed = 0;
+	this->speed.rightSpeed = 0;
 }
 void Drivetrain::setSpeedFromSpeedPair(const SpeedPair &pair) {
-	this->leftSpeed = pair.leftSpeed;
-	this->rightSpeed = pair.rightSpeed;
+	this->speed.leftSpeed = pair.leftSpeed;
+	this->speed.rightSpeed = pair.rightSpeed;
 }
 
 
