@@ -24,7 +24,10 @@ constexpr double ELIPSON_DOUBLE = std::numeric_limits<double>::epsilon();
 constexpr long double ELIPSON_LDOUBLE = std::numeric_limits<long double>::epsilon();
 constexpr float FRAME = {10}; // Frame time
 
-
+inline double deg2rad(double degrees) noexcept;
+inline double rad2deg(double radians) noexcept;
+inline Vec2 rad2vec(double angleRad) noexcept;
+inline Vec2 deg2vec(double angleDeg) noexcept;
 
 
 //| MARK: Structs
@@ -304,13 +307,13 @@ inline double rad2deg(double radians) noexcept {
 
 // Returns radians -> Vec2
 // Uses sin and cos to turn the angle into coordinates on a unit circle
-inline Vec2 rad2vec(double angleRad) {
+inline Vec2 rad2vec(double angleRad) noexcept {
     return Vec2{ std::cos(angleRad), std::sin(angleRad) };
 }
 
 // Returns degrees -> Vec2
 // Uses sin and cos to turn the angle into coordinates on a unit circle
-inline Vec2 deg2vec(double angleDeg) {
+inline Vec2 deg2vec(double angleDeg) noexcept {
     return Vec2{ std::cos(deg2rad(angleDeg)), std::sin(deg2rad(angleDeg)) };
 }
 
