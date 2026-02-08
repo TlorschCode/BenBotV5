@@ -314,7 +314,8 @@ inline Vec2 rad2vec(double angleRad) noexcept {
 // Returns degrees -> Vec2
 // Uses sin and cos to turn the angle into coordinates on a unit circle
 inline Vec2 deg2vec(double angleDeg) noexcept {
-    return Vec2{ std::cos(deg2rad(angleDeg)), std::sin(deg2rad(angleDeg)) };
+    const double rad = deg2rad(angleDeg);
+    return Vec2{ std::cos(rad), std::sin(rad) };
 }
 
 
