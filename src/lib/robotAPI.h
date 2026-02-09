@@ -176,7 +176,7 @@ public:
 	float heading_deg = 0;
 	Drivetrain drivetrain;
 	pros::Imu inertial;
-	std::atomic<std::shared_ptr<autonAPI::AutonController>> autonController;
+	std::shared_ptr<autonAPI::AutonController> autonController;
 };
 
 } // namespace robotAPI

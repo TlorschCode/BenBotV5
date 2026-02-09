@@ -115,7 +115,9 @@ inline bool _otherBitsOn(const uint32_t &itm, const uint32_t &mask) {
 //MARK: Thread
 void thread_UpdateOdom() {
 	while (running_program.load()) {
-		robot.autonController.load().get()->updateHeadingAndOdom();
+		robot.autonController->mtx.lock();
+		robot.autonController->updateHeadingAndOdom();
+		robot.autonController->mtx.unlock();
 		wait(FRAME);
 	}
 }
@@ -265,13 +267,15 @@ void quickAuton() {
  */
 // MARK: Autonomous
 void autonomous() {
-	auto autonCtrl = robot.autonController.load().get();
+	robot.autonController->mtx.lock();
+	robot.autonController->setPIDposVal(PID_P, {0, 0.3f});
+	robot.autonController->setPIDposVal(PID_I, {0, 0.01f});
+	robot.autonController->setPIDposVal(PID_D, {0, 0.01f});
 
-	autonCtrl->setPIDposVal(PID_P, {0, 0.3}); // vvv magic numbers found through testing vvv
-	autonCtrl->setPIDposVal(PID_I | PID_D, {0, 0.0f});
-
-	autonCtrl->setPIDrotVal(PID_P | PID_I, {0, 0.3f});
-	autonCtrl->setPIDrotVal(PID_I | PID_D, {0, 0.0f});
+	robot.autonController->setPIDrotVal(PID_P, {0, 0.3f});
+	robot.autonController->setPIDrotVal(PID_I, {0, 0.01f});
+	robot.autonController->setPIDrotVal(PID_D, {0, 0.01f});
+	robot.autonController->mtx.unlock();
 
 	printOnScreen("AUTON!");
 	wait(100);
@@ -284,9 +288,11 @@ void autonomous() {
 		{-24, -24},
 		{0, -24}
 	};
-	autonPoints = robot.autonController.load().get()->driveAlongPath(std::move(autonPoints), PID_I | PID_D);
+
+	robot.autonController->mtx.lock();
+	autonPoints = robot.autonController->driveAlongPath(std::move(autonPoints), robot.autonController->mtx, PID_I | PID_D);
 	printOnScreen("WE DID IT!");
-	wait(100000);
+	wait(100'000);
 }
 
 void brakeScoring(std::vector<pros::Motor*> scoringMotors) {
@@ -340,8 +346,8 @@ void scorePipeline() {
 
 // MARK: opcontrol
 void opcontrol() {
-	autonomous();
 	odomThread = new pros::Task(thread_UpdateOdom);
+	autonomous();
 	// clear_screen();
 	// bool motors_overheated = false;
 	// while (!motors_overheated) {

@@ -101,7 +101,9 @@ class AutonController {
         float checkRadius = {10.0f};
         AutonController() = default;
 
-        std::vector<Point> driveAlongPath(std::vector<Point> path, PID PIDvalsToIgnore);
+	    pros::Mutex mtx;
+
+        std::vector<Point> driveAlongPath(std::vector<Point> path, pros::Mutex& _mtx, PID PIDvalsToIgnore);
         float updateHeadingAndOdom();
         NODISCARD SpeedPair getPID_speedTo(Vec2& _target, PID PIDvalsToIgnore);
         // Gets the intersect of the robot's check circle and the target/next target

@@ -58,7 +58,9 @@ SpeedPair AutonController::getPID_speedTo(Vec2& target, PID PIDvalsToIgnore) {
 
 // Uses PID and Pure Pursuit to drive along a path.
 // Pass `path` by std::move for optimal performance, so long as the orginal array is no longer needed
-std::vector<Point> AutonController::driveAlongPath(std::vector<Point> path, PID PIDvalsToIgnore) {
+// Unlocks _mtx
+std::vector<Point> AutonController::driveAlongPath(std::vector<Point> path, pros::Mutex& _mtx, PID PIDvalsToIgnore) {
+    _mtx.unlock();
     Point target = path.at(0);
 	Point prevPoint = robot->pos;
 	Vec2 curTargetLoc = {0, 0};  // The current intersect
@@ -67,12 +69,12 @@ std::vector<Point> AutonController::driveAlongPath(std::vector<Point> path, PID 
 	for (size_t ptIdx = 0; ptIdx < path.size() - 1; ptIdx++) { // - 1 so we can have an extra point the robot doesn't visit but it aims for
 		Point& point = path.at(ptIdx);
         const Point& nextPoint = path.at(ptIdx + 1);
-        robot->autonController.load().get()->getPurePursuitLoc({0, 0}, {0, 0}, resetStatics); // Reset lastValidLookaheadPoint
+        robot->autonController->getPurePursuitLoc({0, 0}, {0, 0}, resetStatics); // Reset lastValidLookaheadPoint
 
 		while (!point.visited) {
             updateHeadingAndOdom();
-			curTargetLoc = robot->autonController.load().get()->getPurePursuitLoc(point, nextPoint, keepStatics);
-			SpeedPair result = robot->autonController.load().get()->getPID_speedTo(curTargetLoc, PIDvalsToIgnore);
+			curTargetLoc = robot->autonController->getPurePursuitLoc(point, nextPoint, keepStatics);
+			SpeedPair result = robot->autonController->getPID_speedTo(curTargetLoc, PIDvalsToIgnore);
 			robot->drivetrain.setSpeedFromSpeedPair(result);
 
             //* VVV Debug VVV
