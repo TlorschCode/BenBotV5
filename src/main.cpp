@@ -265,6 +265,14 @@ void quickAuton() {
  */
 // MARK: Autonomous
 void autonomous() {
+	auto autonCtrl = robot.autonController.load().get();
+
+	autonCtrl->setPIDposVal(PID_P, {0, 0.3}); // vvv magic numbers found through testing vvv
+	autonCtrl->setPIDposVal(PID_I | PID_D, {0, 0.0f});
+
+	autonCtrl->setPIDrotVal(PID_P | PID_I, {0, 0.3f});
+	autonCtrl->setPIDrotVal(PID_I | PID_D, {0, 0.0f});
+
 	printOnScreen("AUTON!");
 	wait(100);
 	robot.drivetrain.brakeWheels();
@@ -273,10 +281,10 @@ void autonomous() {
 	std::vector<Point> autonPoints = {
 		{0, 0},
 		{0, 24},
-		{12, 12},
+		{-24, -24},
 		{0, -24}
 	};
-	autonPoints = robot.autonController.load().get()->driveAlongPath(std::move(autonPoints));
+	autonPoints = robot.autonController.load().get()->driveAlongPath(std::move(autonPoints), PID_I | PID_D);
 	printOnScreen("WE DID IT!");
 	wait(100000);
 }

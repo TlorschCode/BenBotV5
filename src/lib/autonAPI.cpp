@@ -10,7 +10,7 @@ using Intersect = std::variant<Vec2, std::nullptr_t>;
 
 // Returns the left and right speed a robot's drivetrain should adopt in order to go towards a point using PID.
 // (Uses dot product to control rotation PID)
-NODISCARD SpeedPair AutonController::getPID_speedTo(Vec2& target) {
+SpeedPair AutonController::getPID_speedTo(Vec2& target, PID PIDvalsToIgnore) {
     //| Statics
     static float prevPosError = 0;
     static float prevRotError = 0;
@@ -31,7 +31,7 @@ NODISCARD SpeedPair AutonController::getPID_speedTo(Vec2& target) {
     iRot += curRotError * iRot.weight;
     dRot = dRot.weight * (curRotError - prevRotError);
     prev_pRot = pRot.val;
-    const float PID_rot = (pRot + (iRot * iRot.weight) + (dRot * dRot.weight)).val;
+    const float PID_rot = ((pRot * (PIDvalsToIgnore & PID_P)) + (iRot * (PIDvalsToIgnore & PID_I) * iRot.weight) + (dRot * (PIDvalsToIgnore & PID_D) * dRot.weight)).val;
 
 
     //| Position
@@ -51,28 +51,28 @@ NODISCARD SpeedPair AutonController::getPID_speedTo(Vec2& target) {
     if (curRotError < 0) {}
     // return pos - rot, pos + rot
     return SpeedPair{
-        -PID_rot,
-        PID_rot
+        PID_pos - PID_rot,
+        PID_pos + PID_rot
     };
 }
 
 // Uses PID and Pure Pursuit to drive along a path.
-// Pass `points` by std::move for optimal performance, so long as the orginal array is no longer needed
-std::vector<Point> AutonController::driveAlongPath(std::vector<Point> points) {
-    Point target = points.at(0);
+// Pass `path` by std::move for optimal performance, so long as the orginal array is no longer needed
+std::vector<Point> AutonController::driveAlongPath(std::vector<Point> path, PID PIDvalsToIgnore) {
+    Point target = path.at(0);
 	Point prevPoint = robot->pos;
 	Vec2 curTargetLoc = {0, 0};  // The current intersect
 	Vec2 prevTargetLoc = {0, 0}; // Last valid intersect
 	robot->drivetrain.brakeWheels();
-	for (size_t ptIdx = 0; ptIdx < points.size() - 1; ptIdx++) { // - 1 so we can have an extra point the robot doesn't visit but it aims for
-		Point& point = points.at(ptIdx);
-        const Point& nextPoint = points.at(ptIdx + 1);
+	for (size_t ptIdx = 0; ptIdx < path.size() - 1; ptIdx++) { // - 1 so we can have an extra point the robot doesn't visit but it aims for
+		Point& point = path.at(ptIdx);
+        const Point& nextPoint = path.at(ptIdx + 1);
         robot->autonController.load().get()->getPurePursuitLoc({0, 0}, {0, 0}, resetStatics); // Reset lastValidLookaheadPoint
 
 		while (!point.visited) {
             updateHeadingAndOdom();
 			curTargetLoc = robot->autonController.load().get()->getPurePursuitLoc(point, nextPoint, keepStatics);
-			SpeedPair result = robot->autonController.load().get()->getPID_speedTo(curTargetLoc);
+			SpeedPair result = robot->autonController.load().get()->getPID_speedTo(curTargetLoc, PIDvalsToIgnore);
 			robot->drivetrain.setSpeedFromSpeedPair(result);
 
             //* VVV Debug VVV
@@ -91,7 +91,7 @@ std::vector<Point> AutonController::driveAlongPath(std::vector<Point> points) {
 			prevTargetLoc = curTargetLoc;
 		}
 	}
-    return points;
+    return path;
 }
 
 Intersect AutonController::getIntersect(const Vec2 &target, const Vec2 lastValidLookaheadPoint) {
@@ -171,7 +171,7 @@ float AutonController::updateHeadingAndOdom() {
 
     robot->pos.x += ((wheelRotDelta / 360.0f) * robot->drivetrain.GEAR_RATIO * robot->drivetrain.WHEEL_CIRCUMFERENCE) * sin(deg2rad(robot->heading_deg));
     robot->pos.y += ((wheelRotDelta / 360.0f) * robot->drivetrain.GEAR_RATIO * robot->drivetrain.WHEEL_CIRCUMFERENCE) * cos(deg2rad(robot->heading_deg));
-    return (wheelRotDelta / 360.0f); // Return this for debugging purposes
+    return {wheelRotDelta / 360.0f}; // Return this for debugging purposes
 }
 
 } // namespace autonAPI
