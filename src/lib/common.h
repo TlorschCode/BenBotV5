@@ -14,7 +14,9 @@ struct Vec2;
 struct W_Vec2;
 
 
-
+inline void wait(int time) {
+	pros::delay(time);
+}
 
 
 //| MARK: Constants

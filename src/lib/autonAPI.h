@@ -103,9 +103,9 @@ class AutonController {
 
 	    pros::Mutex mtx;
 
-        std::vector<Point> driveAlongPath(std::vector<Point> path, pros::Mutex& _mtx, PID PIDvalsToIgnore);
+        std::vector<Point> driveAlongPath(std::vector<Point> path, PID PIDvalsKeep);
         float updateHeadingAndOdom();
-        NODISCARD SpeedPair getPID_speedTo(Vec2& _target, PID PIDvalsToIgnore);
+        NODISCARD SpeedPair getPID_speedTo(Vec2& _target, PID PIDvalsKeep);
         // Gets the intersect of the robot's check circle and the target/next target
         NODISCARD Vec2 getPurePursuitLoc(const Vec2& target, const Vec2& nextTarget, bool resetLastLookahead);
         inline void _bindRobot(robotAPI::Robot* r) { robot = r; }

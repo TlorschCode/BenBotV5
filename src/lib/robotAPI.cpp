@@ -92,6 +92,11 @@ void Drivetrain::moveWheels(float speedLeft, float speedRight) {
 	this->speed.rightSpeed = speedRight;
 	moveWheels();
 }
+void Drivetrain::moveWheels(SpeedPair speed) {
+	this->speed = speed;
+	moveWheels();
+}
+
 void Drivetrain::setSpeedFromController(const ctrlAPI::Controller &controller) {
 	if (driveMode == DrivingMode::SINGLE_JOYSTICK) {
 		this->speed.leftSpeed = controller.leftAnalogYPercent - controller.leftAnalogXPercent;
@@ -108,10 +113,6 @@ void Drivetrain::brakeWheels() {
 	}
 	this->speed.leftSpeed = 0;
 	this->speed.rightSpeed = 0;
-}
-void Drivetrain::setSpeedFromSpeedPair(const SpeedPair &pair) {
-	this->speed.leftSpeed = pair.leftSpeed;
-	this->speed.rightSpeed = pair.rightSpeed;
 }
 
 

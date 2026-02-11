@@ -85,9 +85,6 @@ Robot& robot = init_robot();
 //| NON-DEFAULT FUNCTIONS |//
 // MARK: Utils
 
-void wait(int time) {
-	pros::delay(time);
-}
 
 void clear_screen() {
 	pros::lcd::clear_line(1);
@@ -266,7 +263,6 @@ void quickAuton() {
  */
 // MARK: Autonomous
 void autonomous() {
-	robot.autonController->mtx.lock();
 	robot.autonController->setPIDposVal(PID_P, {0, 0.3f});
 	robot.autonController->setPIDposVal(PID_I, {0, 0.01f});
 	robot.autonController->setPIDposVal(PID_D, {0, 0.01f});
@@ -274,10 +270,9 @@ void autonomous() {
 	robot.autonController->setPIDrotVal(PID_P, {0, 0.3f});
 	robot.autonController->setPIDrotVal(PID_I, {0, 0.01f});
 	robot.autonController->setPIDrotVal(PID_D, {0, 0.01f});
-	robot.autonController->mtx.unlock();
 
 	printOnScreen("AUTON!");
-	wait(100);
+	wait(FRAME);
 	robot.drivetrain.brakeWheels();
 	// Original auton
 	// Init
@@ -288,8 +283,11 @@ void autonomous() {
 		{0, -24}
 	};
 
-	robot.autonController->mtx.lock();
-	autonPoints = robot.autonController->driveAlongPath(std::move(autonPoints), robot.autonController->mtx, PID_I | PID_D);
+	printOnScreen("ABOUT TO BEGIN DRIVE");
+	wait(FRAME);
+	printOnScreen("BEGINNING DRIVE");
+	wait(FRAME);
+	autonPoints = robot.autonController->driveAlongPath(std::move(autonPoints), PID_P);
 	printOnScreen("WE DID IT!");
 	wait(100'000);
 }
@@ -345,8 +343,8 @@ void scorePipeline() {
 
 // MARK: opcontrol
 void opcontrol() {
-	odomThread = new pros::Task(thread_UpdateOdom);
 	autonomous();
+	odomThread = new pros::Task(thread_UpdateOdom);
 	// clear_screen();
 	// bool motors_overheated = false;
 	// while (!motors_overheated) {

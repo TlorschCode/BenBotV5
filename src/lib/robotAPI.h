@@ -129,10 +129,6 @@ public:
 		return (w_topRight.getPosition() + w_middleRight.getPosition() + w_bottomRight.getPosition()) / 3;
 	}
 
-	// Sets the drivetrarin's leftSpeed and rightSpeed according to a Vec2.
-	// leftSpeed is set to the 'x' attribute of the Vec2, and rightSpeed is set to the 'y' attribute.
-	void setSpeedFromSpeedPair(const SpeedPair &pair);
-
 	// Sets the brake mode of each of the wheels.
 	void setBrakeMode(pros::motor_brake_mode_e mode);
 
@@ -142,6 +138,9 @@ public:
 	// Moves the wheels according to the inputted speedLeft and speedRight.
 	// Sets the drivetrain's leftSpeed and rightSpeed to the corresponding inputs.
 	void moveWheels(float speedLeft, float speedRight);
+
+	// Moves the wheels according to the inputted SpeedPair
+	void moveWheels(SpeedPair speeds);
 
 	// Brakes all of the wheels
 	void brakeWheels();

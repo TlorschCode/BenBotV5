@@ -10,7 +10,7 @@ using Intersect = std::variant<Vec2, std::nullptr_t>;
 
 // Returns the left and right speed a robot's drivetrain should adopt in order to go towards a point using PID.
 // (Uses dot product to control rotation PID)
-SpeedPair AutonController::getPID_speedTo(Vec2& target, PID PIDvalsToIgnore) {
+SpeedPair AutonController::getPID_speedTo(Vec2& target, PID PIDvalsKeep) {
     //| Statics
     static float prevPosError = 0;
     static float prevRotError = 0;
@@ -27,21 +27,21 @@ SpeedPair AutonController::getPID_speedTo(Vec2& target, PID PIDvalsToIgnore) {
     //| Rotation
     const float curRotError = rad2deg(std::atan2(crossProd(headingVec, targRotVec), dotProd(headingVec, targRotVec))); // from -180 to 180 (radians is -pi to pi)
     // PID calc
-    pRot = curRotError * pRot.weight;
-    iRot += curRotError * iRot.weight;
-    dRot = dRot.weight * (curRotError - prevRotError);
+    pRot.val = curRotError * pRot.weight;
+    iRot.val += curRotError * iRot.weight;
+    dRot.val = dRot.weight * (curRotError - prevRotError);
     prev_pRot = pRot.val;
-    const float PID_rot = ((pRot * (PIDvalsToIgnore & PID_P)) + (iRot * (PIDvalsToIgnore & PID_I) * iRot.weight) + (dRot * (PIDvalsToIgnore & PID_D) * dRot.weight)).val;
+    const float PID_rot = (pRot.val * (PIDvalsKeep & PID_P)) + (iRot.val * (PIDvalsKeep & PID_I) * iRot.weight) + (dRot.val * (PIDvalsKeep & PID_D) * dRot.weight);
 
 
     //| Position
     const float curPosError = distanceBetween(robot->pos, target); 
     // PID calc
-    pPos = curPosError * pPos.weight;
-    iPos += curPosError * iPos.weight;
-    dPos = dPos.weight * (curPosError - prevPosError);
+    pPos.val = curPosError * pPos.weight;
+    iPos.val += curPosError * iPos.weight;
+    dPos.val = dPos.weight * (curPosError - prevPosError);
     prev_pPos = pPos.val;
-    const float PID_pos = (pPos + (iPos * iPos.weight) + (dPos * dPos.weight)).val;
+    const float PID_pos = (pPos.val * (PIDvalsKeep & PID_P)) + ((iPos.val * (PIDvalsKeep & PID_I)) * iPos.weight) + ((dPos.val * (PIDvalsKeep & PID_D)) * dPos.weight);
 
     //| Cleanup
     prevRotError = curRotError;
@@ -59,8 +59,7 @@ SpeedPair AutonController::getPID_speedTo(Vec2& target, PID PIDvalsToIgnore) {
 // Uses PID and Pure Pursuit to drive along a path.
 // Pass `path` by std::move for optimal performance, so long as the orginal array is no longer needed
 // Unlocks _mtx
-std::vector<Point> AutonController::driveAlongPath(std::vector<Point> path, pros::Mutex& _mtx, PID PIDvalsToIgnore) {
-    _mtx.unlock();
+std::vector<Point> AutonController::driveAlongPath(std::vector<Point> path, PID PIDvalsKeep) {
     Point target = path.at(0);
 	Point prevPoint = robot->pos;
 	Vec2 curTargetLoc = {0, 0};  // The current intersect
@@ -74,8 +73,8 @@ std::vector<Point> AutonController::driveAlongPath(std::vector<Point> path, pros
 		while (!point.visited) {
             updateHeadingAndOdom();
 			curTargetLoc = robot->autonController->getPurePursuitLoc(point, nextPoint, keepStatics);
-			SpeedPair result = robot->autonController->getPID_speedTo(curTargetLoc, PIDvalsToIgnore);
-			robot->drivetrain.setSpeedFromSpeedPair(result);
+			SpeedPair result = robot->autonController->getPID_speedTo(curTargetLoc, PIDvalsKeep);
+			robot->drivetrain.moveWheels(result);
 
             //* VVV Debug VVV
 			printOnScreen(distanceBetween(robot->pos, point));
@@ -89,8 +88,8 @@ std::vector<Point> AutonController::driveAlongPath(std::vector<Point> path, pros
 
 			// When within 2 inches of a point, mark that point as visted
 			point.visited = (distanceBetween(robot->pos, point) < 2);
-			robot->drivetrain.moveWheels();
 			prevTargetLoc = curTargetLoc;
+            wait(FRAME);
 		}
 	}
     return path;
