@@ -57,12 +57,12 @@ float allRotPrev = {0}; // The previous rotation of all the drivetrain wheels
 bool pressingPneumatics = false;
 // MARK: Init robot
 NODISCARD inline Robot& init_robot() {
-	DrivetrainMotor topLeft(4, false, pros::v5::MotorGearset::blue);    // Reverse
-	DrivetrainMotor middleLeft(5, false, pros::v5::MotorGearset::blue); // Reverse
-	DrivetrainMotor bottomLeft(6, true, pros::v5::MotorGearset::blue);  // Normal
-	DrivetrainMotor topRight(1, true, pros::v5::MotorGearset::blue);    // Reverse
-	DrivetrainMotor middleRight(2, true, pros::v5::MotorGearset::blue); // Reverse
-	DrivetrainMotor bottomRight(3, false, pros::v5::MotorGearset::blue);// Normal
+	DrivetrainMotor topLeft(4, false, pros::v5::MotorGearset::blue);     // Normal
+	DrivetrainMotor middleLeft(5, false, pros::v5::MotorGearset::blue);  // Normal
+	DrivetrainMotor bottomLeft(6, true, pros::v5::MotorGearset::blue);   // Reversed
+	DrivetrainMotor topRight(1, false, pros::v5::MotorGearset::blue);    // Normal
+	DrivetrainMotor middleRight(2, false, pros::v5::MotorGearset::blue); // Normal
+	DrivetrainMotor bottomRight(3, true, pros::v5::MotorGearset::blue);  // Reversed
 	std::array<DrivetrainMotor, 6> drivetrain = {
 		topLeft,
 		middleLeft,
@@ -111,11 +111,13 @@ inline bool _otherBitsOn(const uint32_t &itm, const uint32_t &mask) {
 //MARK: Thread
 void thread_UpdateOdom() {
 	while (running_program.load()) {
-		robot.autonController->mtx.lock();
 		robot.autonController->updateHeadingAndOdom();
-		robot.autonController->mtx.unlock();
 		wait(FRAME);
 	}
+}
+
+void startOdomThread() {
+	odomThread = new pros::Task(thread_UpdateOdom);
 }
 
 void checkPauseProgram() { /// REMOVE THIS FUNCTION FOR FINAL COMPETITION
@@ -201,7 +203,7 @@ void skillsAuton() {
 }
 
 //| RUDIMENTARY
-void quickAuton() {
+void autonPark() {
 	robot.drivetrain.setBrakeMode(BRAKE_MODE_HOLD);
 	// Score 3 points auton
 	while (robot.pos.y < 9) {
@@ -250,6 +252,102 @@ void quickAuton() {
 	bandRotatorBottom.move_velocity(200);
 }
 
+void _update() {
+	robot.autonController.get()->updateHeadingAndOdom();
+	wait(FRAME);
+}
+
+void brakeScoring(std::vector<pros::Motor*> scoringMotors) {
+	for (int i = 0; i < scoringMotors.size(); i++) {
+		scoringMotors.at(i)->brake();
+	}
+}
+
+void _suckUpBalls() {
+	conveyor.move_velocity(200);
+	bandRotatorTop.move_velocity(-275);
+	intake.move_velocity(200);
+	brakeScoring({&bandRotatorBottom});
+}
+
+void _spitOutBalls() {
+	conveyor.move_velocity(200);
+	bandRotatorTop.move_velocity(-275);
+	intake.move_velocity(200);
+	brakeScoring({&bandRotatorBottom});
+}
+
+void simple_auton() {
+	printOnScreen("BEGINNING SIMPLE AUTON");
+	while (robot.pos.y < 25) {
+		robot.drivetrain.moveWheels(30, 30);
+		_update();
+		wait(FRAME);
+	}
+	robot.drivetrain.brakeWheels();
+	wait(100);
+	while (robot.heading_deg < 5) {
+		robot.drivetrain.moveWheels(10, -10);
+		_update();
+		wait(FRAME);
+	}
+	robot.drivetrain.brakeWheels();
+	_suckUpBalls();
+	wait(100);
+	while (robot.pos.y < 31) {
+		if (robot.heading_deg < 9) {
+			robot.drivetrain.moveWheels(20, 5);
+		}
+		robot.drivetrain.moveWheels(20, 20);
+		_update();
+		wait(FRAME);
+	}
+	while (robot.pos.y < 44) {
+		robot.drivetrain.moveWheels(10, 10);
+		_update();
+		wait(FRAME);
+	}
+	wait(100);
+	while (robot.heading_deg > -37.5f) { // Pick up balls
+		robot.drivetrain.moveWheels(10, -10);
+		_update();
+		wait(FRAME);
+	}
+	brakeScoring({&conveyor, &intake, &bandRotatorTop, &bandRotatorBottom});
+	while (robot.pos.y < 51.5f) { // drive to lower goal
+		robot.drivetrain.moveWheels(20, 20);
+		_update();
+		wait(FRAME);
+	}
+	robot.drivetrain.brakeWheels();
+	wait(100);
+	loaderRod.toggle();
+	robot.drivetrain.brakeWheels();
+	wait(300);
+	loaderRod.toggle();
+	intake.move_velocity(-200);
+	wait(100);
+	while (robot.pos.y < 52.5f) {
+		robot.drivetrain.moveWheels(50, 50);
+		_update();
+		wait(FRAME);
+	}
+	robot.drivetrain.brakeWheels();
+	brakeScoring({&intake});
+	wait(100);
+	while (robot.pos.y > 48) {
+		robot.drivetrain.moveWheels(-20, -20);
+		_update();
+		wait(FRAME);
+	}
+	robot.drivetrain.brakeWheels();
+
+	robot.drivetrain.setBrakeMode(BRAKE_MODE_COAST);
+	printOnScreen("DONE!");
+	wait(100000);
+	exit(0);
+}
+
 /**
  * Runs the user autonomous code. This function will be started in its own task
  * with the default priority and stack size whenever the robot is enabled via
@@ -263,13 +361,15 @@ void quickAuton() {
  */
 // MARK: Autonomous
 void autonomous() {
-	robot.autonController->setPIDposVal(PID_P, {0, 0.3f});
-	robot.autonController->setPIDposVal(PID_I, {0, 0.01f});
-	robot.autonController->setPIDposVal(PID_D, {0, 0.01f});
+	simple_auton();
+	return;
+	robot.autonController.get()->setPIDposVal(PID_P, {0, 0.3f});
+	robot.autonController.get()->setPIDposVal(PID_I, {0, 0.01f});
+	robot.autonController.get()->setPIDposVal(PID_D, {0, 0.01f});
 
-	robot.autonController->setPIDrotVal(PID_P, {0, 0.3f});
-	robot.autonController->setPIDrotVal(PID_I, {0, 0.01f});
-	robot.autonController->setPIDrotVal(PID_D, {0, 0.01f});
+	robot.autonController.get()->setPIDrotVal(PID_P, {0, 0.3f});
+	robot.autonController.get()->setPIDrotVal(PID_I, {0, 0.01f});
+	robot.autonController.get()->setPIDrotVal(PID_D, {0, 0.01f});
 
 	printOnScreen("AUTON!");
 	wait(FRAME);
@@ -290,12 +390,6 @@ void autonomous() {
 	autonPoints = robot.autonController->driveAlongPath(std::move(autonPoints), PID_P);
 	printOnScreen("WE DID IT!");
 	wait(100'000);
-}
-
-void brakeScoring(std::vector<pros::Motor*> scoringMotors) {
-	for (int i = 0; i < scoringMotors.size(); i++) {
-		scoringMotors.at(i)->brake();
-	}
 }
 
 // MARK: Driving
@@ -344,7 +438,6 @@ void scorePipeline() {
 // MARK: opcontrol
 void opcontrol() {
 	autonomous();
-	odomThread = new pros::Task(thread_UpdateOdom);
 	// clear_screen();
 	// bool motors_overheated = false;
 	// while (!motors_overheated) {

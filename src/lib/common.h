@@ -67,6 +67,8 @@ struct SpeedPair {
 
     constexpr SpeedPair(float _leftSpeed = 0.0f, float _rightSpeed = 0.0f) noexcept
         : leftSpeed(_leftSpeed), rightSpeed(_rightSpeed) {}
+    
+    constexpr inline SpeedPair& operator=(const SpeedPair& a) noexcept { leftSpeed = a.leftSpeed; rightSpeed = a.rightSpeed; return *this; }
 
     // Vec2 <op> Vec2
     constexpr inline SpeedPair operator+(const SpeedPair& a) const noexcept { return {leftSpeed + a.leftSpeed, rightSpeed + a.rightSpeed}; }
