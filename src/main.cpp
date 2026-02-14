@@ -43,7 +43,7 @@ void configureMotors() {
 	intake.set_encoder_units(pros::E_MOTOR_ENCODER_DEGREES);
 }
 pros::Imu inertial(11);
-pros::adi::Pneumatics loaderRod('A', false);
+pros::adi::Pneumatics scraper('A', false);
 pros::adi::Pneumatics descorer('B', false);
 
 
@@ -254,7 +254,6 @@ void autonPark() {
 
 void _update() {
 	robot.autonController.get()->updateHeadingAndOdom();
-	wait(FRAME);
 }
 
 void brakeScoring(std::vector<pros::Motor*> scoringMotors) {
@@ -276,6 +275,8 @@ void _spitOutBalls() {
 	intake.move_velocity(200);
 	brakeScoring({&bandRotatorBottom});
 }
+
+
 
 void simple_auton() {
 	printOnScreen("BEGINNING SIMPLE AUTON");
@@ -324,10 +325,10 @@ void simple_auton() {
 	}
 	robot.drivetrain.brakeWheels();
 	wait(100);
-	loaderRod.toggle();
+	scraper.toggle();
 	robot.drivetrain.brakeWheels();
 	wait(300);
-	loaderRod.toggle();
+	scraper.toggle();
 	intake.move_velocity(-200);
 	conveyor.move_velocity(-200);
 	wait(3000);
@@ -345,6 +346,64 @@ void simple_auton() {
 	wait(1000);
 }
 
+void skills_auton() {
+	const Vec2 rightHomeGoalPos = {63, 3};
+	printOnScreen("BEGINNING SKILLS AUTON");
+	//| Pick up balls
+	while (robot.pos.y < 25) {
+		robot.drivetrain.moveWheels(30, 30);
+		_update();
+		wait(FRAME);
+	}
+	robot.drivetrain.brakeWheels();
+	wait(100);
+	while (robot.heading_deg < 5) {
+		robot.drivetrain.moveWheels(10, -10);
+		_update();
+		wait(FRAME);
+	}
+	robot.drivetrain.brakeWheels();
+	_suckUpBalls();
+	wait(100);
+	while (robot.pos.y < 31) {
+		if (robot.heading_deg < 9) {
+			robot.drivetrain.moveWheels(20, 5);
+		}
+		robot.drivetrain.moveWheels(20, 20);
+		_update();
+		wait(FRAME);
+	}
+	while (robot.pos.y < 46) {
+		robot.drivetrain.moveWheels(10, 10);
+		_update();
+		wait(FRAME);
+	}
+	wait(100);
+	float targ_heading = degreesTill(robot.pos, {rightHomeGoalPos.x, 10});
+	while (robot.heading_deg < targ_heading) {
+		robot.drivetrain.moveWheels(30, -30);
+		_update();
+		wait(FRAME);
+	}
+	brakeScoring({&intake, &conveyor});
+	// scraper.toggle();
+	float dist_till;
+	while (robot.pos.x < rightHomeGoalPos.x) {
+		dist_till = degreesTill(robot.pos, rightHomeGoalPos);
+		if (std::abs(dist_till) > 5) {
+			robot.drivetrain.moveWheels(dist_till * 0.3f * sign(dist_till), dist_till * -0.3f * sign(dist_till));
+		} else {
+			robot.drivetrain.moveWheels(30, 30);
+		}
+		printOnScreen(dist_till);
+		_update();
+		wait(FRAME);
+	}
+	robot.drivetrain.brakeWheels();
+	printOnScreen("DONE");
+	wait(100000);
+}
+
 /**
  * Runs the user autonomous code. This function will be started in its own task
  * with the default priority and stack size whenever the robot is enabled via
@@ -358,7 +417,10 @@ void simple_auton() {
  */
 // MARK: Autonomous
 void autonomous() {
-	simple_auton();
+	// simple_auton();
+
+	autonPark();
+
 	// return;
 	// robot.autonController.get()->setPIDposVal(PID_P, {0, 0.3f});
 	// robot.autonController.get()->setPIDposVal(PID_I, {0, 0.01f});
@@ -402,7 +464,7 @@ void drivePipeline() {
 void scorePipeline() {
 	float maxElevatorSpeed = 200.0f;
 	if (controller.getNewPress(Button::B)) {
-		loaderRod.toggle();
+		scraper.toggle();
 	}
 	if (controller.getNewPress(Button::A)) {
 		descorer.toggle();
@@ -434,24 +496,25 @@ void scorePipeline() {
 
 // MARK: opcontrol
 void opcontrol() {
-	robot.drivetrain.setBrakeMode(BRAKE_MODE_COAST);
-	clear_screen();
-	bool motors_overheated = false;
-	while (!motors_overheated) {
-		for (DrivetrainMotor* motor : robot.drivetrain.getWheelsAsPtrs()) {
-			if (motor->rawMotor.is_over_temp()) {
-				motors_overheated = true;
-			}
-		}
-		if (robot.drivetrain.w_topLeft.rawMotor.is_over_temp() || robot.drivetrain.w_topRight.rawMotor.is_over_temp() || robot.drivetrain.w_bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.w_bottomRight.rawMotor.is_over_temp()) break;
-		controller.updateInputData();
-		// robot.autonController->updateHeadingAndOdom();
-		drivePipeline();
-		scorePipeline();
-		wait(FRAME);
-	}
-	controller.rawController.rumble("...");
-	// printOnScreen(to_string(robot.pos.y));
+	autonomous();
+	// robot.drivetrain.setBrakeMode(BRAKE_MODE_COAST);
+	// clear_screen();
+	// bool motors_overheated = false;
+	// while (!motors_overheated) {
+	// 	for (DrivetrainMotor* motor : robot.drivetrain.getWheelsAsPtrs()) {
+	// 		if (motor->rawMotor.is_over_temp()) {
+	// 			motors_overheated = true;
+	// 		}
+	// 	}
+	// 	if (robot.drivetrain.w_topLeft.rawMotor.is_over_temp() || robot.drivetrain.w_topRight.rawMotor.is_over_temp() || robot.drivetrain.w_bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.w_bottomRight.rawMotor.is_over_temp()) break;
+	// 	controller.updateInputData();
+	// 	// robot.autonController->updateHeadingAndOdom();
+	// 	drivePipeline();
+	// 	scorePipeline();
+	// 	wait(FRAME);
+	// }
+	// controller.rawController.rumble("...");
+	// // printOnScreen(to_string(robot.pos.y));
 	robot.drivetrain.brakeWheels();
 	conveyor.brake();
 	intake.brake();
