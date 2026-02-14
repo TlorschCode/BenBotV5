@@ -117,7 +117,7 @@ void thread_UpdateOdom() {
 }
 
 void startOdomThread() {
-	odomThread = new pros::Task(thread_UpdateOdom);
+	// odomThread = new pros::Task(thread_UpdateOdom);
 }
 
 void checkPauseProgram() { /// REMOVE THIS FUNCTION FOR FINAL COMPETITION
@@ -362,34 +362,34 @@ void simple_auton() {
 // MARK: Autonomous
 void autonomous() {
 	simple_auton();
-	return;
-	robot.autonController.get()->setPIDposVal(PID_P, {0, 0.3f});
-	robot.autonController.get()->setPIDposVal(PID_I, {0, 0.01f});
-	robot.autonController.get()->setPIDposVal(PID_D, {0, 0.01f});
+	// return;
+	// robot.autonController.get()->setPIDposVal(PID_P, {0, 0.3f});
+	// robot.autonController.get()->setPIDposVal(PID_I, {0, 0.01f});
+	// robot.autonController.get()->setPIDposVal(PID_D, {0, 0.01f});
 
-	robot.autonController.get()->setPIDrotVal(PID_P, {0, 0.3f});
-	robot.autonController.get()->setPIDrotVal(PID_I, {0, 0.01f});
-	robot.autonController.get()->setPIDrotVal(PID_D, {0, 0.01f});
+	// robot.autonController.get()->setPIDrotVal(PID_P, {0, 0.3f});
+	// robot.autonController.get()->setPIDrotVal(PID_I, {0, 0.01f});
+	// robot.autonController.get()->setPIDrotVal(PID_D, {0, 0.01f});
 
-	printOnScreen("AUTON!");
-	wait(FRAME);
-	robot.drivetrain.brakeWheels();
-	// Original auton
-	// Init
-	std::vector<Point> autonPoints = {
-		{0, 0},
-		{0, 24},
-		{-24, -24},
-		{0, -24}
-	};
+	// printOnScreen("AUTON!");
+	// wait(FRAME);
+	// robot.drivetrain.brakeWheels();
+	// // Original auton
+	// // Init
+	// std::vector<Point> autonPoints = {
+	// 	{0, 0},
+	// 	{0, 24},
+	// 	{-24, -24},
+	// 	{0, -24}
+	// };
 
-	printOnScreen("ABOUT TO BEGIN DRIVE");
-	wait(FRAME);
-	printOnScreen("BEGINNING DRIVE");
-	wait(FRAME);
-	autonPoints = robot.autonController->driveAlongPath(std::move(autonPoints), PID_P);
-	printOnScreen("WE DID IT!");
-	wait(100'000);
+	// printOnScreen("ABOUT TO BEGIN DRIVE");
+	// wait(FRAME);
+	// printOnScreen("BEGINNING DRIVE");
+	// wait(FRAME);
+	// autonPoints = robot.autonController->driveAlongPath(std::move(autonPoints), PID_P);
+	// printOnScreen("WE DID IT!");
+	// wait(100'000);
 }
 
 // MARK: Driving
@@ -437,22 +437,21 @@ void scorePipeline() {
 
 // MARK: opcontrol
 void opcontrol() {
-	autonomous();
-	// clear_screen();
-	// bool motors_overheated = false;
-	// while (!motors_overheated) {
-	// 	for (DrivetrainMotor* motor : robot.drivetrain.getWheelsAsPtrs()) {
-	// 		if (motor->rawMotor.is_over_temp()) {
-	// 			motors_overheated = true;
-	// 		}
-	// 	}
-	// 	if (robot.drivetrain.w_topLeft.rawMotor.is_over_temp() || robot.drivetrain.w_topRight.rawMotor.is_over_temp() || robot.drivetrain.w_bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.w_bottomRight.rawMotor.is_over_temp()) break;
-	// 	controller.updateInputData();
-	// 	// robot.autonController->updateHeadingAndOdom();
-	// 	drivePipeline();
-	// 	scorePipeline();
-	// 	wait(FRAME);
-	// }
+	clear_screen();
+	bool motors_overheated = false;
+	while (!motors_overheated) {
+		for (DrivetrainMotor* motor : robot.drivetrain.getWheelsAsPtrs()) {
+			if (motor->rawMotor.is_over_temp()) {
+				motors_overheated = true;
+			}
+		}
+		if (robot.drivetrain.w_topLeft.rawMotor.is_over_temp() || robot.drivetrain.w_topRight.rawMotor.is_over_temp() || robot.drivetrain.w_bottomLeft.rawMotor.is_over_temp() || robot.drivetrain.w_bottomRight.rawMotor.is_over_temp()) break;
+		controller.updateInputData();
+		// robot.autonController->updateHeadingAndOdom();
+		drivePipeline();
+		scorePipeline();
+		wait(FRAME);
+	}
 	controller.rawController.rumble("...");
 	// printOnScreen(to_string(robot.pos.y));
 	robot.drivetrain.brakeWheels();
@@ -462,6 +461,6 @@ void opcontrol() {
 	bandRotatorTop.brake();
 	running_program.store(false);
 	odomThread->remove();
-	delete odomThread;
+	// delete odomThread;
 	odomThread = nullptr;
 }
