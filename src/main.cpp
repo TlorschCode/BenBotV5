@@ -309,7 +309,7 @@ void simple_auton() {
 	}
 	wait(100);
 	while (robot.heading_deg > -37.5f) { // Pick up balls
-		if (robot.heading_deg < -15) {
+		if (robot.heading_deg < -7) {
 			brakeScoring({&conveyor}); // stop conveyor halfway through so that the ball stays in the conveyor
 		}
 		robot.drivetrain.moveWheels(-10, 10);
