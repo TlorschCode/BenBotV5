@@ -88,8 +88,8 @@ void Drivetrain::moveWheels() {
 	w_bottomRight.setVelocityPercent(speed.rightSpeed);
 }
 void Drivetrain::moveWheels(float speedLeft, float speedRight) {
-	this->speed.leftSpeed = speedLeft;
-	this->speed.rightSpeed = speedRight;
+	this->speed.leftSpeed = speedRight; // FOR SOME REASON TURNING IS INVERTED. HAVE TO SWITCH THESE FOR IT TO WORK.
+	this->speed.rightSpeed = speedLeft;
 	moveWheels();
 }
 void Drivetrain::moveWheels(SpeedPair speed) {
@@ -102,8 +102,8 @@ void Drivetrain::setSpeedFromController(const ctrlAPI::Controller &controller) {
 		this->speed.leftSpeed = controller.leftAnalogYPercent - controller.leftAnalogXPercent;
 		this->speed.rightSpeed = controller.leftAnalogYPercent + controller.leftAnalogXPercent;
 	} else {
-		this->speed.rightSpeed = controller.rightAnalogYPercent;
-		this->speed.leftSpeed = controller.leftAnalogYPercent;
+		this->speed.rightSpeed = controller.leftAnalogYPercent; // TURNING IS INVERTED FOR SOME REASON. LEFT AND RIGHT HAVE TO BE SWAPPED
+		this->speed.leftSpeed = controller.rightAnalogYPercent;
 	}
 	moveWheels();
 }

@@ -60,9 +60,9 @@ NODISCARD inline Robot& init_robot() {
 	DrivetrainMotor topLeft(4, false, pros::v5::MotorGearset::blue);     // Normal
 	DrivetrainMotor middleLeft(5, false, pros::v5::MotorGearset::blue);  // Normal
 	DrivetrainMotor bottomLeft(6, true, pros::v5::MotorGearset::blue);   // Reversed
-	DrivetrainMotor topRight(1, false, pros::v5::MotorGearset::blue);    // Normal
-	DrivetrainMotor middleRight(2, false, pros::v5::MotorGearset::blue); // Normal
-	DrivetrainMotor bottomRight(3, true, pros::v5::MotorGearset::blue);  // Reversed
+	DrivetrainMotor topRight(1, true, pros::v5::MotorGearset::blue);    // Normal
+	DrivetrainMotor middleRight(2, true, pros::v5::MotorGearset::blue); // Normal
+	DrivetrainMotor bottomRight(3, false, pros::v5::MotorGearset::blue);  // Reversed
 	std::array<DrivetrainMotor, 6> drivetrain = {
 		topLeft,
 		middleLeft,
@@ -309,11 +309,14 @@ void simple_auton() {
 	}
 	wait(100);
 	while (robot.heading_deg > -37.5f) { // Pick up balls
-		robot.drivetrain.moveWheels(10, -10);
+		if (robot.heading_deg < -15) {
+			brakeScoring({&conveyor}); // stop conveyor halfway through so that the ball stays in the conveyor
+		}
+		robot.drivetrain.moveWheels(-10, 10);
 		_update();
 		wait(FRAME);
 	}
-	brakeScoring({&conveyor, &intake, &bandRotatorTop, &bandRotatorBottom});
+	brakeScoring({&intake, &bandRotatorTop, &bandRotatorBottom});
 	while (robot.pos.y < 51.5f) { // drive to lower goal
 		robot.drivetrain.moveWheels(20, 20);
 		_update();
@@ -326,14 +329,9 @@ void simple_auton() {
 	wait(300);
 	loaderRod.toggle();
 	intake.move_velocity(-200);
-	wait(100);
-	while (robot.pos.y < 52.5f) {
-		robot.drivetrain.moveWheels(50, 50);
-		_update();
-		wait(FRAME);
-	}
-	robot.drivetrain.brakeWheels();
-	brakeScoring({&intake});
+	conveyor.move_velocity(-200);
+	wait(3000);
+	brakeScoring({&conveyor, &intake});
 	wait(100);
 	while (robot.pos.y > 48) {
 		robot.drivetrain.moveWheels(-20, -20);
@@ -344,8 +342,7 @@ void simple_auton() {
 
 	robot.drivetrain.setBrakeMode(BRAKE_MODE_COAST);
 	printOnScreen("DONE!");
-	wait(100000);
-	exit(0);
+	wait(1000);
 }
 
 /**
@@ -437,6 +434,7 @@ void scorePipeline() {
 
 // MARK: opcontrol
 void opcontrol() {
+	robot.drivetrain.setBrakeMode(BRAKE_MODE_COAST);
 	clear_screen();
 	bool motors_overheated = false;
 	while (!motors_overheated) {
