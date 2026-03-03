@@ -21,7 +21,7 @@ SpeedPair AutonController::getPID_speedTo(Vec2& target, PID PIDvalsKeep) {
     //| Setup
     const float targetRot = degreesTill(robot->pos, target);
     const Vec2 targRotVec = deg2vec(targetRot); // The direction as a vec, using sin and cos to convert it to x and y (unit circle style)
-    const Vec2 headingVec = deg2vec(robot->heading_deg);
+    const Vec2 headingVec = deg2vec(robot->heading);
 
     // TODO: Set up dot product and cross product math to avoid turning the wrong way if the values are like: targ = 30 & cur=270
     //| Rotation
@@ -161,7 +161,7 @@ Vec2 AutonController::getPurePursuitLoc(const Vec2 &target, const Vec2& nextTarg
 float AutonController::updateHeadingAndOdom() {
     uint32_t now = pros::millis();
 
-    robot->heading_deg = truncate(robot->inertial.get_rotation()); // Cutoff at 2 decimal places because inertial sensor is innacurate
+    robot->heading = truncate(robot->inertial.get_rotation()); // Cutoff at 2 decimal places because inertial sensor is innacurate
 
     float leftMotorsPos = robot->drivetrain.getLeftMotorsPos();
     float rightMotorsPos = robot->drivetrain.getRightMotorsPos();
@@ -170,8 +170,8 @@ float AutonController::updateHeadingAndOdom() {
     float wheelRotDelta = averageWheelRot - prev_allWheelRot;
     prev_allWheelRot = averageWheelRot;
 
-    robot->pos.x += ((wheelRotDelta / 360.0f) * robot->drivetrain.GEAR_RATIO * robot->drivetrain.WHEEL_CIRCUMFERENCE) * sin(deg2rad(robot->heading_deg));
-    robot->pos.y += ((wheelRotDelta / 360.0f) * robot->drivetrain.GEAR_RATIO * robot->drivetrain.WHEEL_CIRCUMFERENCE) * cos(deg2rad(robot->heading_deg));
+    robot->pos.x += ((wheelRotDelta / 360.0f) * robot->drivetrain.GEAR_RATIO * robot->drivetrain.WHEEL_CIRCUMFERENCE) * sin(deg2rad(robot->heading));
+    robot->pos.y += ((wheelRotDelta / 360.0f) * robot->drivetrain.GEAR_RATIO * robot->drivetrain.WHEEL_CIRCUMFERENCE) * cos(deg2rad(robot->heading));
     return {wheelRotDelta / 360.0f}; // Return this for debugging purposes
 }
 

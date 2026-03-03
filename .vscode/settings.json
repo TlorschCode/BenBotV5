@@ -1,6 +1,6 @@
 {
     "makefile.configureOnOpen": false,
-    "C_Cpp.default.compilerPath": "c:\\Users\\thoma\\VS-Code Programs\\REAL PROJECTS\\ROBOTICS\\BenBotV5\\.vscode\\c_cpp_properties.json",
+    "C_Cpp.default.compilerPath": "C:/Winlibs/mingw64/bin/g++.exe",
     "files.associations": {
         "array": "cpp",
         "cmath": "cpp",
