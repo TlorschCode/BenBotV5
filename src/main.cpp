@@ -26,8 +26,8 @@ using namespace robotAPI;
 
 // MARK: Game state
 
-constexpr float COLOR_TOLERANCE = 200.0f;
-constexpr float SATURATION_TOLERANCE = 0.1f;
+constexpr float COLOR_TOLERANCE = 300.0f;
+constexpr float BRIGHTNESS_TOLERANCE = 0.02f;
 enum class TeamColor {
 	RED,
 	BLUE,
@@ -158,21 +158,16 @@ void checkPauseProgram() { /// REMOVE THIS FUNCTION FOR FINAL COMPETITION
 // MARK: Helper funcs
 
 NODISCARD TeamColor _getTeamColorViewed() {
-	if (colorChecker.get_saturation() < SATURATION_TOLERANCE) return TeamColor::UNKNOWN;
-	double r = colorChecker.get_rgb().red;
-	double g = colorChecker.get_rgb().green;
-	double b = colorChecker.get_rgb().blue;
-	double sum = r + g + b;
-	r /= sum;
-	g /= sum;
-	b /= sum;
-	if (r - b > COLOR_TOLERANCE) {
-		return TeamColor::BLUE;
+	static TeamColor lastColor = TeamColor::UNKNOWN;
+	auto rgb = colorChecker.get_rgb();
+	if (colorChecker.get_brightness() < BRIGHTNESS_TOLERANCE) return lastColor = TeamColor::UNKNOWN;
+	if (rgb.blue - rgb.red > COLOR_TOLERANCE) {
+		return lastColor = TeamColor::BLUE;
 	}
-	if (b - r > COLOR_TOLERANCE) {
-		return TeamColor::RED;
+	if (rgb.red - rgb.blue > COLOR_TOLERANCE) {
+		return lastColor = TeamColor::RED;
 	}
-	return TeamColor::UNKNOWN;
+	return lastColor;
 }
 
 void _update() {
@@ -187,7 +182,7 @@ void brakeScoring(std::vector<pros::Motor*> scoringMotors) {
 
 void _scoreBalls() {
 	conveyor.move_velocity(200);
-	if (colorChecker.get_saturation() > SATURATION_TOLERANCE) {
+	if (colorChecker.get_saturation() > BRIGHTNESS_TOLERANCE) {
 		if (TEAM == _getTeamColorViewed()) {
 			bandRotatorTop.move_velocity(275); // score out
 		} else {
@@ -390,36 +385,44 @@ void disabled() {}
  * starts.
  */
 
-void competition_initialize() {
-	printOnScreen("STARTING");
-	printOnScreen("Robot starting side is: Left Side", 1);
+void startColorAndSideSelection() {
+	TEAM = TeamColor::BLUE;
+	STARTING_SIDE = StartingSide::RIGHT; // TODO: Change to left for consistency's sake
+	printOnScreen("Robot starting side is: Right Side", 1); // TODO: Change to left for consistency's sake
 	wait(FRAME);
 	printOnScreen("Robot team is: Blue", 2);
 
 	while (true) {
+		controller.updateInputData();
 		if (sideSwitcher.get_value()) {
 			STARTING_SIDE = (STARTING_SIDE == StartingSide::LEFT) ? StartingSide::RIGHT : StartingSide::LEFT;
 			printOnScreen(std::format("Robot starting side set to: {}", (STARTING_SIDE == StartingSide::LEFT) ? "Left Side" : "Right Side", 1));
 			while (sideSwitcher.get_value()) {
+				controller.rawController.rumble("...");
 				wait(FRAME);
 			}
 		}
 
 		if (teamSwitcher.get_value()) {
 			TEAM = (TEAM == TeamColor::BLUE) ? TeamColor::RED : TeamColor::BLUE;
-			printOnScreen(std::format("Robot team set to: {}", (TEAM == TeamColor::BLUE) ? "Blue" : "Red", 2));
+			printOnScreen(std::format("Robot team set to: {}", (TEAM == TeamColor::BLUE) ? "Blue" : "Red"), 2);
 			while (teamSwitcher.get_value()) {
+				controller.rawController.rumble("...");
 				wait(FRAME);
 			}
 		}
 
-		if (controller.getNewPress(Button::X)) {
+		while (controller.getPressing(Button::X)) {
 			controller.rawController.rumble("...");
 			return;
 		}
-
 		wait(FRAME);
 	}
+}
+
+void competition_initialize() {
+	printOnScreen("STARTING");
+	startColorAndSideSelection();
 }
 
 
@@ -750,7 +753,7 @@ void scorePipeline() {
 
 // MARK: opcontrol
 void opcontrol() {
-	// competition_initialize();
+	startColorAndSideSelection();
 	// autonomous();
 	robot.drivetrain.setBrakeMode(BRAKE_MODE_COAST);
 	clear_screen();
@@ -767,11 +770,13 @@ void opcontrol() {
 		// robot.autonController->updateHeadingAndOdom();
 		drivePipeline();
 		scorePipeline();
-		printOnScreen(colorChecker.get_rgb().red);
-		printOnScreen(colorChecker.get_rgb().green, 1);
-		printOnScreen(colorChecker.get_rgb().blue, 2);
-		printOnScreen(colorChecker.get_saturation(), 2);
-		// printOnScreen(colorChecker.get_rgb().saturation, 2);
+		auto rgb = colorChecker.get_rgb();
+		// if (_getTeamColorViewed() == TeamColor::UNKNOWN) controller.rawController.rumble("...");
+		printOnScreen(rgb.red);
+		printOnScreen(rgb.green, 1);
+		printOnScreen(rgb.blue, 2);
+		printOnScreen(colorChecker.get_saturation(), 3);
+		printOnScreen(rgb.brightness, 4);
 		wait(FRAME);
 	}
 	controller.rawController.rumble("...");
