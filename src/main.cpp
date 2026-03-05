@@ -26,8 +26,8 @@ using namespace robotAPI;
 
 // MARK: Game state
 
-constexpr float COLOR_TOLERANCE = 300.0f;
-constexpr float BRIGHTNESS_TOLERANCE = 0.02f;
+constexpr float COLOR_TOLERANCE = 200.0f;
+constexpr float BRIGHTNESS_TOLERANCE = 0.001f;
 enum class TeamColor {
 	RED,
 	BLUE,
@@ -160,7 +160,7 @@ void checkPauseProgram() { /// REMOVE THIS FUNCTION FOR FINAL COMPETITION
 NODISCARD TeamColor _getTeamColorViewed() {
 	static TeamColor lastColor = TeamColor::UNKNOWN;
 	auto rgb = colorChecker.get_rgb();
-	if (colorChecker.get_brightness() < BRIGHTNESS_TOLERANCE) return lastColor = TeamColor::UNKNOWN;
+	if (colorChecker.get_brightness() < BRIGHTNESS_TOLERANCE) return lastColor;
 	if (rgb.blue - rgb.red > COLOR_TOLERANCE) {
 		return lastColor = TeamColor::BLUE;
 	}
@@ -325,7 +325,7 @@ void stepRobotSpeedToBalanced(float targ, float amount) {
 
 void _stopRobot() {
 	while (robot.drivetrain.speed.rightSpeed + robot.drivetrain.speed.leftSpeed > ELIPSON_FLOAT * 2) {
-		stepRobotSpeedToBalanced(0, 8);
+		stepRobotSpeedToBalanced(0, 2);
 	}
 }
 
@@ -398,7 +398,6 @@ void startColorAndSideSelection() {
 			STARTING_SIDE = (STARTING_SIDE == StartingSide::LEFT) ? StartingSide::RIGHT : StartingSide::LEFT;
 			printOnScreen(std::format("Robot starting side set to: {}", (STARTING_SIDE == StartingSide::LEFT) ? "Left Side" : "Right Side", 1));
 			while (sideSwitcher.get_value()) {
-				controller.rawController.rumble("...");
 				wait(FRAME);
 			}
 		}
@@ -407,7 +406,6 @@ void startColorAndSideSelection() {
 			TEAM = (TEAM == TeamColor::BLUE) ? TeamColor::RED : TeamColor::BLUE;
 			printOnScreen(std::format("Robot team set to: {}", (TEAM == TeamColor::BLUE) ? "Blue" : "Red"), 2);
 			while (teamSwitcher.get_value()) {
-				controller.rawController.rumble("...");
 				wait(FRAME);
 			}
 		}
@@ -530,52 +528,78 @@ void autonPark() {
 
 
 void simple_auton() {
+	// while (true) {
+	// 	_update();
+	// 	printOnScreen(robot.heading);
+	// 	wait(FRAME);
+	// }
 	int loopCount = 0;
 	printOnScreen("BEGINNING SIMPLE AUTON");
-	while (robot.pos.y < 25) {
-		stepRobotSpeedTo(50, 2);
+	while (robot.pos.y < 24) {
+		if (robot.pos.y > 17) {
+			stepRobotSpeedTo(25, 1);
+		} else {
+			stepRobotSpeedTo(50, 1);
+		}
 	}
 	_stopRobot();
 	wait(100);
 	while (robot.heading < 5) {
-		stepRobotSpeedTo(20, -20, 2, 2);
+		stepRobotSpeedToBalanced(-20, 20, 2);
 	}
-	_stopRobot();
+	robot.drivetrain.brakeWheels();
 	_suckBalls();
 	wait(100);
 	while (robot.pos.y < 31) {
 		if (robot.heading < 9) {
-			stepRobotSpeedTo(20, 5, 2, 0.5f);
+			stepRobotSpeedToBalanced(20, -20, 2);
 		}
-		stepRobotSpeedTo(20, 1);
+		stepRobotSpeedToBalanced(20, 1);
 	}
-	while (robot.pos.y < 44) {
-		stepRobotSpeedTo(20, 1);
+	while (robot.pos.y < 48) {
+		if (robot.pos.y < 38) {
+			stepRobotSpeedToBalanced(10, 1); // Pick up balls
+		} else {
+			stepRobotSpeedToBalanced(10, 1); // Pick up balls
+		}
 	}
+	while (robot.pos.y > 44) {
+		stepRobotSpeedToBalanced(-20, 1);
+	}
+	robot.drivetrain.brakeWheels();
 	wait(100);
-	brakeScoring({&conveyor}); // stop conveyor halfway through so that the ball stays in the conveyor
-	while (robot.heading > -37.5f) { // Pick up balls
+	while (robot.heading > -34) { // point to lower goal
 		if (robot.heading < -15) {
 		}
-		stepRobotSpeedTo(-10, 10, 1, 1);
+		stepRobotSpeedTo(10, -10, 1, 1);
 	}
-	brakeScoring({&intake, &bandRotatorTop, &bandRotatorBottom});
-	while (robot.pos.y < 51.5f) { // drive to lower goal
+	controller.rawController.rumble(".");
+	brakeScoring({&conveyor, &intake, &bandRotatorTop, &bandRotatorBottom});
+	while (robot.pos.y < 51) { // drive to lower goal
 		stepRobotSpeedTo(20, 2);
 	}
-	_stopRobot();
+	_update();
+	robot.drivetrain.brakeWheels();
 	wait(100);
-	scraper.toggle(); // place ball into bottom
-
-	wait(300);
 	scraper.toggle();
-	while (robot.pos.y > 26) {
-		stepRobotSpeedTo(-30, 2); // back up
-		_update();
-		wait(FRAME);
+	wait(300);
+	scraper.toggle(); // place ball into bottom
+	// while (robot.pos.y < 51) {
+	// 	stepRobotSpeedTo(50, 5);
+	// }
+	_update();
+	robot.drivetrain.brakeWheels();
+	wait(100);
+	brakeScoring({&conveyor});
+	// robot.drivetrain.moveWheels(-100, -100);
+	// wait(100'000);
+	while (robot.pos.y > 30) {
+		stepRobotSpeedToBalanced(-50, -50, 2); // back up
 	}
+	robot.drivetrain.brakeWheels();
+	controller.rawController.rumble("..."); // check to make sure it's not tracking the abs() of the wheel positions and thinking the robot is going forward
 	while (robot.heading > 0) {
-		stepRobotSpeedToBalanced(30, 2);
+		stepRobotSpeedToBalanced(-10, 10, 2);
 	}
 	_stopRobot();
 	_scoreBalls();
@@ -754,7 +778,8 @@ void scorePipeline() {
 // MARK: opcontrol
 void opcontrol() {
 	startColorAndSideSelection();
-	// autonomous();
+	autonomous();
+	controller.rawController.rumble("...");
 	robot.drivetrain.setBrakeMode(BRAKE_MODE_COAST);
 	clear_screen();
 	bool motors_overheated = false;
