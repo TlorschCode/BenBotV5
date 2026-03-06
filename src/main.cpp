@@ -182,7 +182,7 @@ void brakeScoring(std::vector<pros::Motor*> scoringMotors) {
 
 void _scoreBalls() {
 	conveyor.move_velocity(200);
-	if (colorChecker.get_saturation() > BRIGHTNESS_TOLERANCE) {
+	if (colorChecker.get_brightness() > BRIGHTNESS_TOLERANCE) {
 		if (TEAM == _getTeamColorViewed()) {
 			bandRotatorTop.move_velocity(275); // score out
 		} else {
