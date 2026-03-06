@@ -578,6 +578,7 @@ void simple_auton() {
 	while (robot.pos.y < 51) { // drive to lower goal
 		stepRobotSpeedTo(20, 2);
 	}
+	brakeScoring({&conveyor});
 	_update();
 	robot.drivetrain.brakeWheels();
 	wait(100);
@@ -593,18 +594,25 @@ void simple_auton() {
 	brakeScoring({&conveyor});
 	// robot.drivetrain.moveWheels(-100, -100);
 	// wait(100'000);
-	while (robot.pos.y > 30) {
-		stepRobotSpeedToBalanced(-50, -50, 2); // back up
+	while (robot.pos.y > 20) {
+		if (robot.pos.y > 30) {
+			stepRobotSpeedToBalanced(-50, -50, 2); // back up
+		} else {
+			stepRobotSpeedToBalanced(-25, -25, 2); // back up
+		}
 	}
 	robot.drivetrain.brakeWheels();
 	controller.rawController.rumble("..."); // check to make sure it's not tracking the abs() of the wheel positions and thinking the robot is going forward
-	while (robot.heading > 0) {
+	while (robot.heading < 0) {
 		stepRobotSpeedToBalanced(-10, 10, 2);
 	}
-	_stopRobot();
+	robot.drivetrain.brakeWheels();
+	robot.drivetrain.moveWheels(25, 25);
+	wait(1500);
+	robot.drivetrain.brakeWheels();
 	_scoreBalls();
 	robot.drivetrain.setBrakeMode(BRAKE_MODE_COAST);
-	wait(10'000);
+	wait(5000);
 	brakeScoring({&intake, &conveyor, &bandRotatorTop});
 	printOnScreen("DONE!");
 }
@@ -777,8 +785,8 @@ void scorePipeline() {
 
 // MARK: opcontrol
 void opcontrol() {
-	startColorAndSideSelection();
-	autonomous();
+	// startColorAndSideSelection();
+	// autonomous();
 	controller.rawController.rumble("...");
 	robot.drivetrain.setBrakeMode(BRAKE_MODE_COAST);
 	clear_screen();
