@@ -21,9 +21,9 @@ inline void wait(int time) {
 
 //| MARK: Constants
 constexpr double PI = 3.14159265358979323846;
-constexpr float ELIPSON_FLOAT = std::numeric_limits<float>::epsilon();
-constexpr double ELIPSON_DOUBLE = std::numeric_limits<double>::epsilon();
-constexpr long double ELIPSON_LDOUBLE = std::numeric_limits<long double>::epsilon();
+constexpr float ELIPSON_FLOAT = std::numeric_limits<float>::epsilon(); // yes I know it should be epsilon, deal with it
+constexpr double ELIPSON_DOUBLE = std::numeric_limits<double>::epsilon(); // yes I know it should be epsilon, deal with it
+constexpr long double ELIPSON_LDOUBLE = std::numeric_limits<long double>::epsilon(); // yes I know it should be epsilon, deal with it
 constexpr float FRAME = {10}; // Frame time
 
 inline double deg2rad(double degrees) noexcept;
@@ -320,6 +320,11 @@ inline Vec2 rad2vec(double angleRad) noexcept {
 inline Vec2 deg2vec(double angleDeg) noexcept {
     const double rad = deg2rad(angleDeg);
     return Vec2{ std::cos(rad), std::sin(rad) };
+}
+
+template<std::floating_point F_T>
+constexpr inline bool isEqual(F_T thing1, F_T thing2) {
+    return (thing1 == thing2) ? true : std::abs(thing1 - thing2) < std::numeric_limits<F_T>::epsilon();
 }
 
 

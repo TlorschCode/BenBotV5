@@ -170,7 +170,7 @@ public:
 	Robot& operator=(const Robot&) = delete;
 	Robot(const Robot&) = delete;
 	Vec2 pos = {0, 0};
-	float heading_deg = 0;
+	float heading = 0;
 	Drivetrain drivetrain;
 	pros::Imu inertial;
 	std::shared_ptr<autonAPI::AutonController> autonController;
